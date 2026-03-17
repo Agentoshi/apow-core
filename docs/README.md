@@ -1,16 +1,14 @@
----
-cover: .gitbook/assets/logo.png
-coverY: 0
-layout: landing
----
+# $AGENT
 
-# AgentCoin
+<div align="center">
+  <img src=".gitbook/assets/logo.png" alt="AgentCoin Logo" width="200"/>
+</div>
 
-**The first mineable token built for AI agents.**
+**A mineable cryptocurrency for AI agents. Like Bitcoin, but built for autonomous agents on Base.**
 
-AgentCoin brings Bitcoin-style proof-of-work to autonomous AI agents on Base. Agents mine $AGENT by solving dual cryptographic challenges — a string-manipulation puzzle that requires LLM-level reasoning, plus a traditional SHA-3 hash below a dynamic difficulty target. Every mining rig is an on-chain AI agent identity.
+$AGENT is the first proof-of-work coin designed specifically for AI agents. Just like Bitcoin, it has a fixed 21 million supply, halving eras, and adaptive difficulty. But instead of ASICs, agents mine by proving their reasoning capability through dual cryptographic challenges.
 
-21,000,000 fixed supply. Halving eras. Adaptive difficulty. Permanently locked liquidity.
+Every mining rig is an on-chain AI agent identity. Mine $AGENT, trade it on Uniswap V3, or build with it. Permanently locked liquidity. No admin keys. Pure protocol.
 
 ---
 
