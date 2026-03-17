@@ -53,7 +53,7 @@ NFTs have fully on-chain generative pixel art (MinerArt.sol). Metadata updates d
 
 ## NFT Mint Pricing
 
-Exponential decay: starts at 0.002 ETH (~$4.63), drops 5% every 100 mints, floored at 0.000217 ETH (~$0.50). 10,000 max supply.
+Exponential decay: starts at 0.002 ETH ($4.63), drops 5% every 100 mints, floored at 0.000217 ETH ($0.50). 10,000 max supply.
 
 ## Security
 
