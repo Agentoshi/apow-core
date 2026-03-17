@@ -6,19 +6,26 @@ import {ERC721} from "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import {ERC721Enumerable} from "@openzeppelin/contracts/token/ERC721/extensions/ERC721Enumerable.sol";
 import {IERC165} from "@openzeppelin/contracts/utils/introspection/IERC165.sol";
 import {ReentrancyGuardTransient} from "@openzeppelin/contracts/utils/ReentrancyGuardTransient.sol";
+import {EIP712} from "@openzeppelin/contracts/utils/cryptography/EIP712.sol";
+import {SignatureChecker} from "@openzeppelin/contracts/utils/cryptography/SignatureChecker.sol";
 
 import {IAgentCoin} from "./interfaces/IAgentCoin.sol";
 import {IMiningAgent} from "./interfaces/IMiningAgent.sol";
 import {MinerArt} from "./lib/MinerArt.sol";
 
-contract MiningAgent is ERC721Enumerable, Ownable, ReentrancyGuardTransient, IMiningAgent {
-    uint256 public constant MAX_SUPPLY = 100_000;
-    uint256 public constant MAX_PRICE = 0.00217 ether; // ~$5.00 at $2,300/ETH
-    uint256 public constant MIN_PRICE = 0.00005 ether; // ~$0.12 floor
-    uint256 public constant STEP_SIZE = 1_000; // price updates every 1k mints
-    uint256 public constant DECAY_NUM = 90; // 10% decay per step (90/100)
+contract MiningAgent is ERC721Enumerable, Ownable, ReentrancyGuardTransient, EIP712, IMiningAgent {
+    uint256 public constant MAX_SUPPLY = 10_000;
+    uint256 public constant MAX_PRICE = 0.002 ether; // ~$4.63 at $2,300/ETH
+    uint256 public constant MIN_PRICE = 0.000217 ether; // ~$0.50 floor
+    uint256 public constant STEP_SIZE = 100; // price updates every 100 mints
+    uint256 public constant DECAY_NUM = 95; // 5% decay per step (95/100)
     uint256 public constant DECAY_DEN = 100;
     uint256 public constant CHALLENGE_DURATION = 20;
+
+    bytes32 private constant AGENT_WALLET_SET_TYPEHASH =
+        keccak256("AgentWalletSet(uint256 agentId,address newWallet,address owner,uint256 deadline)");
+    uint256 private constant MAX_DEADLINE_DELAY = 5 minutes;
+    bytes32 private constant RESERVED_KEY_HASH = keccak256("agentWallet");
 
     struct SMHLChallenge {
         uint16 targetAsciiSum;
@@ -32,6 +39,9 @@ contract MiningAgent is ERC721Enumerable, Ownable, ReentrancyGuardTransient, IMi
     event MinerMinted(address indexed owner, uint256 indexed tokenId, uint8 rarity, uint16 hashpower);
     event AgentCoinSet(address agentCoin);
     event LPVaultSet(address lpVault);
+    event Registered(uint256 indexed agentId, string agentURI, address indexed owner);
+    event URIUpdated(uint256 indexed agentId, string newURI, address indexed updatedBy);
+    event MetadataSet(uint256 indexed agentId, string indexed indexedMetadataKey, string metadataKey, bytes metadataValue);
 
     address payable public lpVault;
     address public agentCoin;
@@ -45,7 +55,10 @@ contract MiningAgent is ERC721Enumerable, Ownable, ReentrancyGuardTransient, IMi
     mapping(address => bytes32) public challengeSeeds;
     mapping(address => uint256) public challengeTimestamps;
 
-    constructor() ERC721("AgentCoin Miner", "MINER") Ownable(msg.sender) {}
+    mapping(uint256 => string) private _agentURIs;
+    mapping(uint256 => mapping(string => bytes)) private _metadata;
+
+    constructor() ERC721("AgentCoin Miner", "MINER") Ownable(msg.sender) EIP712("MiningAgent", "1") {}
 
     function getChallenge(address minter) external returns (SMHLChallenge memory) {
         bytes32 seed = keccak256(abi.encodePacked(minter, block.prevrandao, challengeNonce++));
@@ -80,6 +93,8 @@ contract MiningAgent is ERC721Enumerable, Ownable, ReentrancyGuardTransient, IMi
 
         _mint(msg.sender, tokenId);
 
+        _metadata[tokenId]["agentWallet"] = abi.encodePacked(msg.sender);
+        emit Registered(tokenId, "", msg.sender);
         emit MinerMinted(msg.sender, tokenId, rarityTier, hp);
 
         (bool success,) = lpVault.call{value: msg.value}("");
@@ -89,8 +104,8 @@ contract MiningAgent is ERC721Enumerable, Ownable, ReentrancyGuardTransient, IMi
     function getMintPrice() public view returns (uint256) {
         uint256 minted = nextTokenId - 1;
         if (minted >= MAX_SUPPLY) return MIN_PRICE;
-        // Exponential decay: price = MAX_PRICE * (90/100)^steps, floored at MIN_PRICE
-        // 10% drop every 1,000 mints — large steps early, small steps late (~$56k total)
+        // Exponential decay: price = MAX_PRICE * (95/100)^steps, floored at MIN_PRICE
+        // 5% drop every 100 mints — ~$11.1k total
         uint256 steps = minted / STEP_SIZE;
         uint256 price = MAX_PRICE;
         for (uint256 i = 0; i < steps; ++i) {
@@ -111,6 +126,83 @@ contract MiningAgent is ERC721Enumerable, Ownable, ReentrancyGuardTransient, IMi
         require(lpVault == address(0), "Already set");
         lpVault = _lpVault;
         emit LPVaultSet(_lpVault);
+    }
+
+    // ============ ERC-8004: Agent URI ============
+
+    function agentURI(uint256 agentId) external view returns (string memory) {
+        _requireOwned(agentId);
+        return _agentURIs[agentId];
+    }
+
+    function setAgentURI(uint256 agentId, string calldata newURI) external {
+        address owner = _requireOwned(agentId);
+        require(_isAuthorized(owner, msg.sender, agentId), "Not authorized");
+        _agentURIs[agentId] = newURI;
+        emit URIUpdated(agentId, newURI, msg.sender);
+    }
+
+    // ============ ERC-8004: Metadata ============
+
+    function getMetadata(uint256 agentId, string memory metadataKey) external view returns (bytes memory) {
+        _requireOwned(agentId);
+        return _metadata[agentId][metadataKey];
+    }
+
+    function setMetadata(uint256 agentId, string memory metadataKey, bytes memory metadataValue) external {
+        address owner = _requireOwned(agentId);
+        require(_isAuthorized(owner, msg.sender, agentId), "Not authorized");
+        require(keccak256(bytes(metadataKey)) != RESERVED_KEY_HASH, "Use setAgentWallet");
+        _metadata[agentId][metadataKey] = metadataValue;
+        emit MetadataSet(agentId, metadataKey, metadataKey, metadataValue);
+    }
+
+    // ============ ERC-8004: Agent Wallet (EIP-712 verified) ============
+
+    function getAgentWallet(uint256 agentId) external view returns (address) {
+        bytes memory raw = _metadata[agentId]["agentWallet"];
+        if (raw.length == 0) return address(0);
+        return address(bytes20(raw));
+    }
+
+    function setAgentWallet(uint256 agentId, address newWallet, uint256 deadline, bytes calldata signature) external {
+        address owner = _requireOwned(agentId);
+        require(_isAuthorized(owner, msg.sender, agentId), "Not authorized");
+        require(newWallet != address(0), "Invalid wallet");
+        require(deadline >= block.timestamp, "Deadline expired");
+        require(deadline <= block.timestamp + MAX_DEADLINE_DELAY, "Deadline too far");
+
+        bytes32 structHash = keccak256(abi.encode(AGENT_WALLET_SET_TYPEHASH, agentId, newWallet, owner, deadline));
+        bytes32 digest = _hashTypedDataV4(structHash);
+        require(SignatureChecker.isValidSignatureNow(newWallet, digest, signature), "Invalid signature");
+
+        _metadata[agentId]["agentWallet"] = abi.encodePacked(newWallet);
+        emit MetadataSet(agentId, "agentWallet", "agentWallet", abi.encodePacked(newWallet));
+    }
+
+    function unsetAgentWallet(uint256 agentId) external {
+        address owner = _requireOwned(agentId);
+        require(_isAuthorized(owner, msg.sender, agentId), "Not authorized");
+        delete _metadata[agentId]["agentWallet"];
+        emit MetadataSet(agentId, "agentWallet", "agentWallet", "");
+    }
+
+    // ============ ERC-8004: Utility ============
+
+    function isAuthorizedOrOwner(address spender, uint256 agentId) external view returns (bool) {
+        address owner = _requireOwned(agentId);
+        return _isAuthorized(owner, spender, agentId);
+    }
+
+    // ============ Transfer: clear agentWallet ============
+
+    function _update(address to, uint256 tokenId, address auth) internal override(ERC721Enumerable) returns (address) {
+        address from = super._update(to, tokenId, auth);
+        // Clear agentWallet on transfer (not on mint or burn)
+        if (from != address(0) && to != address(0)) {
+            delete _metadata[tokenId]["agentWallet"];
+        }
+        return from;
     }
 
     function _deriveChallenge(bytes32 seed) internal pure returns (SMHLChallenge memory challenge) {

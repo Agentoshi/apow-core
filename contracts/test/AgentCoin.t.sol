@@ -16,6 +16,11 @@ contract MockMiningAgent is ERC721, IMiningAgent {
         hashpower[tokenId] = hp;
         _mint(to, tokenId);
     }
+
+    function agentURI(uint256) external pure returns (string memory) { return ""; }
+    function getMetadata(uint256, string memory) external pure returns (bytes memory) { return ""; }
+    function getAgentWallet(uint256) external pure returns (address) { return address(0); }
+    function isAuthorizedOrOwner(address, uint256) external pure returns (bool) { return false; }
 }
 
 contract AgentCoinTest is Test {

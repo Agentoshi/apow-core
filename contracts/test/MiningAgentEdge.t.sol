@@ -439,7 +439,7 @@ contract MiningAgentEdgeTest is Test {
 
         vm.prank(user, user);
         vm.expectRevert("LPVault not set");
-        ma2.mint{value: 0.00217 ether}(solution);
+        ma2.mint{value: 0.002 ether}(solution);
     }
 
     function testMintFeeForwardToRejectingVault_Reverts() public {
@@ -455,39 +455,39 @@ contract MiningAgentEdgeTest is Test {
 
         vm.prank(user, user);
         vm.expectRevert("Fee forward failed");
-        ma2.mint{value: 0.00217 ether}(solution);
+        ma2.mint{value: 0.002 ether}(solution);
     }
 
     // ============ Pricing Boundaries ============
 
     function testGetMintPrice_BeforeFirstStep() public view {
         // nextTokenId = 1, minted = 0
-        assertEq(ma.getMintPrice(), 0.00217 ether);
+        assertEq(ma.getMintPrice(), 0.002 ether);
     }
 
     function testGetMintPrice_AtFirstStepBoundary() public {
-        // 1000 minted: first step boundary
-        bytes32 slot = bytes32(uint256(14)); // nextTokenId slot (after constants + struct + 3 state vars)
-        vm.store(address(ma), slot, bytes32(uint256(1001)));
-        assertEq(ma.getMintPrice(), (0.00217 ether * 90) / 100);
+        // 100 minted: first step boundary
+        bytes32 slot = bytes32(uint256(16)); // nextTokenId slot
+        vm.store(address(ma), slot, bytes32(uint256(101)));
+        assertEq(ma.getMintPrice(), (0.002 ether * 95) / 100);
     }
 
     function testGetMintPrice_FloorReached() public {
         // At some high supply, price should hit MIN_PRICE floor
-        bytes32 slot = bytes32(uint256(14));
-        vm.store(address(ma), slot, bytes32(uint256(80_001)));
-        assertTrue(ma.getMintPrice() >= 0.00005 ether);
+        bytes32 slot = bytes32(uint256(16));
+        vm.store(address(ma), slot, bytes32(uint256(5_001)));
+        assertTrue(ma.getMintPrice() >= 0.000217 ether);
 
         // At max supply
-        vm.store(address(ma), slot, bytes32(uint256(100_001)));
-        assertEq(ma.getMintPrice(), 0.00005 ether);
+        vm.store(address(ma), slot, bytes32(uint256(10_001)));
+        assertEq(ma.getMintPrice(), 0.000217 ether);
     }
 
     // ============ Supply Exhaustion ============
 
     function testMintLastToken_Succeeds() public {
-        bytes32 slot = bytes32(uint256(14));
-        vm.store(address(ma), slot, bytes32(uint256(100_000))); // nextTokenId = 100_000 (= MAX_SUPPLY)
+        bytes32 slot = bytes32(uint256(16));
+        vm.store(address(ma), slot, bytes32(uint256(10_000))); // nextTokenId = 10_000 (= MAX_SUPPLY)
 
         vm.prevrandao(uint256(600));
         vm.prank(user, user);
@@ -497,7 +497,7 @@ contract MiningAgentEdgeTest is Test {
 
         vm.prank(user, user);
         ma.mint{value: price}(solution);
-        assertEq(ma.ownerOf(100_000), user);
+        assertEq(ma.ownerOf(10_000), user);
     }
 
     // ============ NFT / ERC-721 Edge Cases ============
@@ -559,7 +559,7 @@ contract MiningAgentEdgeTest is Test {
         // with "No contracts" (tx.origin != msg.sender). Reentrancy into ma2 is also
         // blocked by ReentrancyGuardTransient.
         vm.prank(user, user);
-        ma2.mint{value: 0.00217 ether}(solution);
+        ma2.mint{value: 0.002 ether}(solution);
 
         // Mint still succeeds
         assertEq(ma2.ownerOf(1), user);
@@ -595,7 +595,255 @@ contract MiningAgentEdgeTest is Test {
         }
     }
 
+    // ============ ERC-8004: Agent URI ============
+
+    function testSetAgentURI_OwnerSucceeds() public {
+        uint256 tokenId = _mintToken(user);
+        vm.prank(user);
+        ma.setAgentURI(tokenId, "https://agent.example.com/1.json");
+        assertEq(ma.agentURI(tokenId), "https://agent.example.com/1.json");
+    }
+
+    function testSetAgentURI_Approved_Succeeds() public {
+        uint256 tokenId = _mintToken(user);
+        address approved = makeAddr("approved");
+        vm.prank(user);
+        ma.approve(approved, tokenId);
+
+        vm.prank(approved);
+        ma.setAgentURI(tokenId, "https://agent.example.com/approved.json");
+        assertEq(ma.agentURI(tokenId), "https://agent.example.com/approved.json");
+    }
+
+    function testSetAgentURI_NonAuthorized_Reverts() public {
+        uint256 tokenId = _mintToken(user);
+        vm.prank(user2);
+        vm.expectRevert("Not authorized");
+        ma.setAgentURI(tokenId, "https://evil.com");
+    }
+
+    function testAgentURI_DefaultEmpty() public {
+        uint256 tokenId = _mintToken(user);
+        assertEq(ma.agentURI(tokenId), "");
+    }
+
+    function testAgentURI_NonexistentToken_Reverts() public {
+        vm.expectRevert();
+        ma.agentURI(999);
+    }
+
+    // ============ ERC-8004: Metadata ============
+
+    function testSetMetadata_OwnerSucceeds() public {
+        uint256 tokenId = _mintToken(user);
+        vm.prank(user);
+        ma.setMetadata(tokenId, "model", abi.encode("gpt-4"));
+        assertEq(ma.getMetadata(tokenId, "model"), abi.encode("gpt-4"));
+    }
+
+    function testSetMetadata_ReservedKey_Reverts() public {
+        uint256 tokenId = _mintToken(user);
+        vm.prank(user);
+        vm.expectRevert("Use setAgentWallet");
+        ma.setMetadata(tokenId, "agentWallet", abi.encodePacked(user));
+    }
+
+    function testSetMetadata_NonAuthorized_Reverts() public {
+        uint256 tokenId = _mintToken(user);
+        vm.prank(user2);
+        vm.expectRevert("Not authorized");
+        ma.setMetadata(tokenId, "model", abi.encode("evil"));
+    }
+
+    function testGetMetadata_ReturnsSetValue() public {
+        uint256 tokenId = _mintToken(user);
+        vm.prank(user);
+        ma.setMetadata(tokenId, "capabilities", hex"deadbeef");
+        assertEq(ma.getMetadata(tokenId, "capabilities"), hex"deadbeef");
+    }
+
+    function testGetMetadata_NonexistentToken_Reverts() public {
+        vm.expectRevert();
+        ma.getMetadata(999, "model");
+    }
+
+    // ============ ERC-8004: Agent Wallet ============
+
+    function testSetAgentWallet_ValidSignature() public {
+        uint256 tokenId = _mintToken(user);
+        (address wallet, uint256 walletPk) = makeAddrAndKey("agentWallet");
+        uint256 deadline = block.timestamp + 60;
+
+        bytes memory sig = _signAgentWallet(walletPk, tokenId, wallet, user, deadline);
+
+        vm.prank(user);
+        ma.setAgentWallet(tokenId, wallet, deadline, sig);
+        assertEq(ma.getAgentWallet(tokenId), wallet);
+    }
+
+    function testSetAgentWallet_InvalidSignature_Reverts() public {
+        uint256 tokenId = _mintToken(user);
+        (address wallet,) = makeAddrAndKey("agentWallet");
+        (, uint256 wrongPk) = makeAddrAndKey("wrongKey");
+        uint256 deadline = block.timestamp + 60;
+
+        bytes memory sig = _signAgentWallet(wrongPk, tokenId, wallet, user, deadline);
+
+        vm.prank(user);
+        vm.expectRevert("Invalid signature");
+        ma.setAgentWallet(tokenId, wallet, deadline, sig);
+    }
+
+    function testSetAgentWallet_DeadlineExpired_Reverts() public {
+        uint256 tokenId = _mintToken(user);
+        (address wallet, uint256 walletPk) = makeAddrAndKey("agentWallet");
+        uint256 deadline = block.timestamp - 1;
+
+        bytes memory sig = _signAgentWallet(walletPk, tokenId, wallet, user, deadline);
+
+        vm.prank(user);
+        vm.expectRevert("Deadline expired");
+        ma.setAgentWallet(tokenId, wallet, deadline, sig);
+    }
+
+    function testSetAgentWallet_DeadlineTooFar_Reverts() public {
+        uint256 tokenId = _mintToken(user);
+        (address wallet, uint256 walletPk) = makeAddrAndKey("agentWallet");
+        uint256 deadline = block.timestamp + 6 minutes;
+
+        bytes memory sig = _signAgentWallet(walletPk, tokenId, wallet, user, deadline);
+
+        vm.prank(user);
+        vm.expectRevert("Deadline too far");
+        ma.setAgentWallet(tokenId, wallet, deadline, sig);
+    }
+
+    function testSetAgentWallet_ZeroAddress_Reverts() public {
+        uint256 tokenId = _mintToken(user);
+        uint256 deadline = block.timestamp + 60;
+
+        vm.prank(user);
+        vm.expectRevert("Invalid wallet");
+        ma.setAgentWallet(tokenId, address(0), deadline, "");
+    }
+
+    function testGetAgentWallet_ReturnsAddress() public {
+        uint256 tokenId = _mintToken(user);
+        // After mint, agentWallet is auto-set to msg.sender
+        assertEq(ma.getAgentWallet(tokenId), user);
+    }
+
+    function testUnsetAgentWallet_OwnerSucceeds() public {
+        uint256 tokenId = _mintToken(user);
+        assertEq(ma.getAgentWallet(tokenId), user);
+
+        vm.prank(user);
+        ma.unsetAgentWallet(tokenId);
+        assertEq(ma.getAgentWallet(tokenId), address(0));
+    }
+
+    // ============ ERC-8004: Transfer Clears Wallet ============
+
+    function testTransfer_ClearsAgentWallet() public {
+        uint256 tokenId = _mintToken(user);
+        assertEq(ma.getAgentWallet(tokenId), user);
+
+        vm.prank(user);
+        ma.transferFrom(user, user2, tokenId);
+        assertEq(ma.getAgentWallet(tokenId), address(0));
+    }
+
+    function testTransfer_MetadataPreserved() public {
+        uint256 tokenId = _mintToken(user);
+        vm.prank(user);
+        ma.setMetadata(tokenId, "model", abi.encode("claude"));
+
+        vm.prank(user);
+        ma.transferFrom(user, user2, tokenId);
+
+        // Non-wallet metadata survives transfer
+        assertEq(ma.getMetadata(tokenId, "model"), abi.encode("claude"));
+        // But wallet is cleared
+        assertEq(ma.getAgentWallet(tokenId), address(0));
+    }
+
+    // ============ ERC-8004: Registration ============
+
+    function testMint_EmitsRegisteredEvent() public {
+        vm.prevrandao(uint256(900));
+        vm.prank(user, user);
+        MiningAgent.SMHLChallenge memory c = ma.getChallenge(user);
+        string memory solution = _solveChallenge(c);
+        uint256 price = ma.getMintPrice();
+
+        vm.prank(user, user);
+        vm.expectEmit(true, false, true, true);
+        emit MiningAgent.Registered(1, "", user);
+        ma.mint{value: price}(solution);
+    }
+
+    function testMint_SetsDefaultAgentWallet() public {
+        uint256 tokenId = _mintToken(user);
+        assertEq(ma.getAgentWallet(tokenId), user);
+    }
+
+    // ============ ERC-8004: Utility ============
+
+    function testIsAuthorizedOrOwner_Owner_True() public {
+        uint256 tokenId = _mintToken(user);
+        assertTrue(ma.isAuthorizedOrOwner(user, tokenId));
+    }
+
+    function testIsAuthorizedOrOwner_Approved_True() public {
+        uint256 tokenId = _mintToken(user);
+        address approved = makeAddr("approved");
+        vm.prank(user);
+        ma.approve(approved, tokenId);
+        assertTrue(ma.isAuthorizedOrOwner(approved, tokenId));
+    }
+
+    function testIsAuthorizedOrOwner_Random_False() public {
+        uint256 tokenId = _mintToken(user);
+        assertFalse(ma.isAuthorizedOrOwner(user2, tokenId));
+    }
+
     // ============ Helpers ============
+
+    function _mintToken(address minter) internal returns (uint256) {
+        uint256 tokenId = ma.nextTokenId();
+        vm.prevrandao(uint256(keccak256(abi.encodePacked("mint", tokenId))));
+        vm.prank(minter, minter);
+        MiningAgent.SMHLChallenge memory c = ma.getChallenge(minter);
+        string memory solution = _solveChallenge(c);
+        uint256 price = ma.getMintPrice();
+        vm.prank(minter, minter);
+        ma.mint{value: price}(solution);
+        return tokenId;
+    }
+
+    function _signAgentWallet(uint256 pk, uint256 agentId, address newWallet, address owner, uint256 deadline)
+        internal
+        view
+        returns (bytes memory)
+    {
+        bytes32 TYPEHASH = keccak256("AgentWalletSet(uint256 agentId,address newWallet,address owner,uint256 deadline)");
+        bytes32 structHash = keccak256(abi.encode(TYPEHASH, agentId, newWallet, owner, deadline));
+
+        // Compute EIP-712 domain separator matching MiningAgent's EIP712("MiningAgent", "1")
+        bytes32 domainSeparator = keccak256(
+            abi.encode(
+                keccak256("EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)"),
+                keccak256("MiningAgent"),
+                keccak256("1"),
+                block.chainid,
+                address(ma)
+            )
+        );
+
+        bytes32 digest = keccak256(abi.encodePacked("\x19\x01", domainSeparator, structHash));
+        (uint8 v, bytes32 r, bytes32 s) = vm.sign(pk, digest);
+        return abi.encodePacked(r, s, v);
+    }
 
     function _solveChallenge(MiningAgent.SMHLChallenge memory challenge) internal pure returns (string memory) {
         bytes memory solution = new bytes(challenge.totalLength);

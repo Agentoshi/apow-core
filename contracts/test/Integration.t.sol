@@ -368,12 +368,12 @@ contract IntegrationTest is Test {
 
     function testSequentialMints_PriceDecreases() public {
         uint256 price1 = ma.getMintPrice();
-        // Mint STEP_SIZE (1000) NFTs to trigger price decay
-        for (uint256 i = 0; i < 1000; ++i) {
+        // Mint STEP_SIZE (100) NFTs to trigger price decay
+        for (uint256 i = 0; i < 100; ++i) {
             _mintNFT(miner1);
         }
         uint256 price2 = ma.getMintPrice();
-        assertTrue(price2 < price1, "Price should decrease after 1000 mints");
+        assertTrue(price2 < price1, "Price should decrease after 100 mints");
     }
 
     // ============ Cross-Contract: AgentCoin ↔ LPVault ============
@@ -466,13 +466,13 @@ contract IntegrationTest is Test {
         ac.mine(0, sol, tokenId);
     }
 
-    function testNFTSupplyCap_MintingStopsAt100k() public {
-        // Set nextTokenId to MAX_SUPPLY (slot 14 for MiningAgent)
-        vm.store(address(ma), bytes32(uint256(14)), bytes32(uint256(100_000)));
+    function testNFTSupplyCap_MintingStopsAt10k() public {
+        // Set nextTokenId to MAX_SUPPLY (slot 16 for MiningAgent)
+        vm.store(address(ma), bytes32(uint256(16)), bytes32(uint256(10_000)));
 
-        // This should be the last mint (tokenId = 100000)
+        // This should be the last mint (tokenId = 10000)
         _mintNFT(miner1);
-        assertEq(ma.nextTokenId(), 100_001);
+        assertEq(ma.nextTokenId(), 10_001);
 
         // Next mint should fail at "Sold out"
         uint256 price = ma.getMintPrice();

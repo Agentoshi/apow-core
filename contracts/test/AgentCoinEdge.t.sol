@@ -21,6 +21,11 @@ contract MockMiningAgentEdge is ERC721, IMiningAgent {
     function burn(uint256 tokenId) external {
         _burn(tokenId);
     }
+
+    function agentURI(uint256) external pure returns (string memory) { return ""; }
+    function getMetadata(uint256, string memory) external pure returns (bytes memory) { return ""; }
+    function getAgentWallet(uint256) external pure returns (address) { return address(0); }
+    function isAuthorizedOrOwner(address, uint256) external pure returns (bool) { return false; }
 }
 
 // Contract caller to test tx.origin check
