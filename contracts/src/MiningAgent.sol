@@ -15,8 +15,8 @@ import {MinerArt} from "./lib/MinerArt.sol";
 
 contract MiningAgent is ERC721Enumerable, Ownable, ReentrancyGuardTransient, EIP712, IMiningAgent {
     uint256 public constant MAX_SUPPLY = 10_000;
-    uint256 public constant MAX_PRICE = 0.002 ether; // ~$4.63 at $2,300/ETH
-    uint256 public constant MIN_PRICE = 0.000217 ether; // ~$0.50 floor
+    uint256 public constant MAX_PRICE = 0.002 ether;
+    uint256 public constant MIN_PRICE = 0.0002 ether;
     uint256 public constant STEP_SIZE = 100; // price updates every 100 mints
     uint256 public constant DECAY_NUM = 95; // 5% decay per step (95/100)
     uint256 public constant DECAY_DEN = 100;
@@ -105,7 +105,7 @@ contract MiningAgent is ERC721Enumerable, Ownable, ReentrancyGuardTransient, EIP
         uint256 minted = nextTokenId - 1;
         if (minted >= MAX_SUPPLY) return MIN_PRICE;
         // Exponential decay: price = MAX_PRICE * (95/100)^steps, floored at MIN_PRICE
-        // 5% drop every 100 mints — ~$11.1k total
+        // 5% drop every 100 mints, floored at MIN_PRICE
         uint256 steps = minted / STEP_SIZE;
         uint256 price = MAX_PRICE;
         for (uint256 i = 0; i < steps; ++i) {

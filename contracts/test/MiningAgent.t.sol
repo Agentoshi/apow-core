@@ -113,16 +113,16 @@ contract MiningAgentTest is Test {
     }
 
     function testMintPricing() public {
-        // First mint: MAX_PRICE = 0.002 ETH (~$4.63)
+        // First mint: MAX_PRICE = 0.002 ETH
         assertEq(miningAgent.getMintPrice(), 0.002 ether);
 
         uint256 slot = stdstore.target(address(miningAgent)).sig("nextTokenId()").find();
 
-        // After 100 mints: 95% of MAX = 0.0019 ETH (~$4.40)
+        // After 100 mints: 95% of MAX = 0.0019 ETH
         vm.store(address(miningAgent), bytes32(slot), bytes32(uint256(101)));
         assertEq(miningAgent.getMintPrice(), 0.0019 ether);
 
-        // After 1000 mints (10 steps): 0.002 * 0.95^10 ≈ 0.001197 ETH (~$2.77)
+        // After 1000 mints (10 steps): 0.002 * 0.95^10 ≈ 0.001197 ETH
         vm.store(address(miningAgent), bytes32(slot), bytes32(uint256(1_001)));
         uint256 price1k = miningAgent.getMintPrice();
         assertTrue(price1k > 0.001190 ether && price1k < 0.001200 ether, "1k price out of range");
@@ -136,7 +136,7 @@ contract MiningAgentTest is Test {
 
         // At 10k+ (sold out): MIN_PRICE floor
         vm.store(address(miningAgent), bytes32(slot), bytes32(uint256(10_001)));
-        assertEq(miningAgent.getMintPrice(), 0.000217 ether);
+        assertEq(miningAgent.getMintPrice(), 0.0002 ether);
     }
 
     function testMintFeeForwarding() public {

@@ -476,11 +476,11 @@ contract MiningAgentEdgeTest is Test {
         // At some high supply, price should hit MIN_PRICE floor
         bytes32 slot = bytes32(uint256(16));
         vm.store(address(ma), slot, bytes32(uint256(5_001)));
-        assertTrue(ma.getMintPrice() >= 0.000217 ether);
+        assertTrue(ma.getMintPrice() >= 0.0002 ether);
 
         // At max supply
         vm.store(address(ma), slot, bytes32(uint256(10_001)));
-        assertEq(ma.getMintPrice(), 0.000217 ether);
+        assertEq(ma.getMintPrice(), 0.0002 ether);
     }
 
     // ============ Supply Exhaustion ============

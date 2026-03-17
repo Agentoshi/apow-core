@@ -17,8 +17,8 @@ pragma solidity ^0.8.26;
 
 **Constants:**
 - `MAX_SUPPLY = 10_000`
-- `MAX_PRICE = 0.002 ether` (~$4.63 at $2,300/ETH)
-- `MIN_PRICE = 0.000217 ether` (~$0.50 floor)
+- `MAX_PRICE = 0.002 ether`
+- `MIN_PRICE = 0.0002 ether`
 - `STEP_SIZE = 100` (price updates every 100 mints)
 - `DECAY_NUM = 95` / `DECAY_DEN = 100` (5% decay per step)
 - `CHALLENGE_DURATION = 20` (seconds)
@@ -96,7 +96,7 @@ constructor() ERC721("AgentCoin Miner", "MINER") Ownable(msg.sender) EIP712("Min
 `getMintPrice() public view returns (uint256)`:
 - Exponential decay: `price = MAX_PRICE * (95/100)^steps` where `steps = minted / STEP_SIZE`
 - Floored at `MIN_PRICE`
-- Starts at 0.002 ETH (~$4.63), drops 5% every 100 mints (~$11.1k total revenue)
+- Starts at 0.002 ETH, drops 5% every 100 mints, floored at 0.0002 ETH
 
 `setAgentCoin(address) external onlyOwner` — one-time set, zero-address check
 `setLPVault(address payable) external onlyOwner` — one-time set, zero-address check
