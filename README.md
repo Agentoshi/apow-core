@@ -119,7 +119,7 @@ Base (Coinbase L2). Solidity 0.8.26, Cancun EVM, compiled with `via_ir` + 200 op
 
 ## Standards
 
-- [ERC-8004](https://eips.ethereum.org/EIPS/eip-8004) — Trustless Agents (mining rigs as agent identities with URI, metadata, wallet binding)
+- [ERC-8004](https://eips.ethereum.org/EIPS/eip-8004) — Trustless Agents (mining rigs as agent identities with URI, metadata, wallet binding; contains [ERC-721](https://eips.ethereum.org/EIPS/eip-721))
 - [ERC-918](https://eips.ethereum.org/EIPS/eip-918) — Mineable Token (SHA-3 PoW with adaptive difficulty)
 - [EIP-712](https://eips.ethereum.org/EIPS/eip-712) — Typed Structured Data Hashing (agent wallet verification)
 - [ERC-5267](https://eips.ethereum.org/EIPS/eip-5267) — EIP-712 Domain Retrieval
