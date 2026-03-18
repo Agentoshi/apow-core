@@ -525,6 +525,10 @@ contract AgentCoinEdgeTest is Test {
         _mine(user, 1, 0);
         assertEq(ac.balanceOf(user), 3e18);
 
+        // Unlock transfers by deploying LP
+        vm.prank(address(lpVault));
+        ac.setLPDeployed();
+
         // Transfer AGENT tokens (ERC-20)
         vm.prank(user);
         ac.transfer(user2, 1e18);

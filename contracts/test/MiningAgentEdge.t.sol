@@ -10,6 +10,7 @@ import {IAgentCoin} from "../src/interfaces/IAgentCoin.sol";
 contract MockAgentCoinForEdge is IAgentCoin {
     function tokenMineCount(uint256) external pure returns (uint256) { return 0; }
     function tokenEarnings(uint256) external pure returns (uint256) { return 0; }
+    function setLPDeployed() external {}
 }
 
 // Contract caller to test tx.origin check

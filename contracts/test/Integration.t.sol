@@ -117,6 +117,13 @@ contract MockUNCXLocker {
     }
 }
 
+contract MockUniswapV3Factory {
+    function getPool(address, address, uint24) external pure returns (address) {
+        // Return zero address to simulate pool doesn't exist
+        return address(0);
+    }
+}
+
 // ============ Integration Tests ============
 
 contract IntegrationTest is Test {
@@ -125,6 +132,7 @@ contract IntegrationTest is Test {
     address internal constant SWAP_ROUTER = 0x2626664c2603336E57B271c5C0b26F421741e481;
     address internal constant POSITION_MANAGER = 0x03a520b32C04BF3bEEf7BEb72E919cf822Ed34f1;
     address internal constant UNCX_V3_LOCKER = 0x231278eDd38B00B07fBd52120CEf685B9BaEBCC1;
+    address internal constant UNISWAP_V3_FACTORY = 0x33128a8fC17869897dcE68Ed026d694621f6FDfD;
 
     MiningAgent internal ma;
     AgentCoin internal ac;
@@ -146,6 +154,7 @@ contract IntegrationTest is Test {
         vm.etch(SWAP_ROUTER, address(new MockSwapRouter()).code);
         vm.etch(POSITION_MANAGER, address(new MockPositionManager()).code);
         vm.etch(UNCX_V3_LOCKER, address(new MockUNCXLocker()).code);
+        vm.etch(UNISWAP_V3_FACTORY, address(new MockUniswapV3Factory()).code);
 
         // Deploy real contracts (interconnected)
         vm.startPrank(deployer);
@@ -204,7 +213,8 @@ contract IntegrationTest is Test {
         // LP reserve should already be in LPVault
         assertEq(ac.balanceOf(address(lpVault)), 2_100_000e18);
 
-        // Deploy LP
+        // Deploy LP (only owner can call)
+        vm.prank(deployer);
         lpVault.deployLP(0);
         assertTrue(lpVault.lpDeployed());
 
@@ -422,7 +432,8 @@ contract IntegrationTest is Test {
         // 2. Fund LPVault to threshold (simulating many mints)
         vm.deal(address(lpVault), 5 ether);
 
-        // 3. Deploy LP
+        // 3. Deploy LP (only owner can call)
+        vm.prank(deployer);
         lpVault.deployLP(0);
         assertTrue(lpVault.lpDeployed());
 

@@ -2,6 +2,7 @@
 pragma solidity ^0.8.26;
 
 import {console, Script} from "forge-std/Script.sol";
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 import {AgentCoin} from "../src/AgentCoin.sol";
 import {LPVault} from "../src/LPVault.sol";
@@ -9,30 +10,43 @@ import {MiningAgent} from "../src/MiningAgent.sol";
 
 contract Deploy is Script {
     function run() external {
-        uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
-        address deployer = vm.addr(deployerPrivateKey);
+        uint256 pk = vm.envUint("PRIVATE_KEY");
+        address deployer = vm.addr(pk);
 
-        vm.startBroadcast(deployerPrivateKey);
+        console.log("Deployer:", deployer);
+        console.log("Chain ID:", block.chainid);
+        require(block.chainid == 8453, "Not Base mainnet");
+
+        vm.startBroadcast(pk);
 
         LPVault lpVault = new LPVault(deployer);
-        console.log("LPVault deployed:", address(lpVault));
-
         MiningAgent miningAgent = new MiningAgent();
-        console.log("MiningAgent deployed:", address(miningAgent));
-
         AgentCoin agentCoin = new AgentCoin(address(miningAgent), address(lpVault));
-        console.log("AgentCoin deployed:", address(agentCoin));
 
         miningAgent.setLPVault(payable(address(lpVault)));
         miningAgent.setAgentCoin(address(agentCoin));
         lpVault.setAgentCoin(address(agentCoin));
 
-        console.log("Deployment complete");
-        console.log("Deployer:", deployer);
-        console.log("LPVault:", address(lpVault));
-        console.log("MiningAgent:", address(miningAgent));
-        console.log("AgentCoin:", address(agentCoin));
-
         vm.stopBroadcast();
+
+        // Post-deployment verification (read-only)
+        require(!agentCoin.lpDeployed(), "lpDeployed should be false");
+        require(!lpVault.lpDeployed(), "vault lpDeployed should be false");
+        require(
+            IERC20(address(agentCoin)).balanceOf(address(lpVault)) == 2_100_000e18,
+            "LP reserve wrong"
+        );
+        require(lpVault.owner() == deployer, "Vault owner wrong");
+        require(miningAgent.owner() == deployer, "MA owner wrong");
+        require(address(miningAgent.lpVault()) == address(lpVault), "MA lpVault wrong");
+        require(miningAgent.agentCoin() == address(agentCoin), "MA agentCoin wrong");
+        require(address(lpVault.agentCoin()) == address(agentCoin), "Vault agentCoin wrong");
+
+        console.log("=== DEPLOYED ===");
+        console.log("AgentCoin:", address(agentCoin));
+        console.log("MiningAgent:", address(miningAgent));
+        console.log("LPVault:", address(lpVault));
+        console.log("lpDeployed:", agentCoin.lpDeployed());
+        console.log("LP Reserve:", IERC20(address(agentCoin)).balanceOf(address(lpVault)));
     }
 }

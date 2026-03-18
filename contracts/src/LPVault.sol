@@ -3,6 +3,9 @@ pragma solidity ^0.8.26;
 
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
+
+import {IAgentCoin} from "./interfaces/IAgentCoin.sol";
 
 interface IWETH is IERC20 {
     function deposit() external payable;
@@ -51,6 +54,11 @@ interface INonfungiblePositionManager {
     function approve(address to, uint256 tokenId) external;
 }
 
+interface IUniswapV3Factory {
+    function getPool(address tokenA, address tokenB, uint24 fee)
+        external view returns (address pool);
+}
+
 interface IUNCXLocker {
     struct LockParams {
         address nftPositionManager;
@@ -68,12 +76,13 @@ interface IUNCXLocker {
     function lock(LockParams calldata params) external payable returns (uint256 lockId);
 }
 
-contract LPVault is Ownable {
+contract LPVault is Ownable, ReentrancyGuard {
     address public constant WETH = 0x4200000000000000000000000000000000000006;
     address public constant USDC = 0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913;
     address public constant SWAP_ROUTER = 0x2626664c2603336E57B271c5C0b26F421741e481;
     address public constant POSITION_MANAGER = 0x03a520b32C04BF3bEEf7BEb72E919cf822Ed34f1;
     address public constant UNCX_V3_LOCKER = 0x231278eDd38B00B07fBd52120CEf685B9BaEBCC1;
+    address public constant UNISWAP_V3_FACTORY = 0x33128a8fC17869897dcE68Ed026d694621f6FDfD;
 
     uint256 public constant LP_DEPLOY_THRESHOLD = 4.9 ether;
     uint256 public constant UNCX_FLAT_FEE = 0.03 ether;
@@ -85,7 +94,7 @@ contract LPVault is Ownable {
     event LPDeployed(uint256 positionTokenId, uint256 agentAmount, uint256 usdcAmount);
     event AgentCoinSet(address agentCoin);
 
-    IERC20 public agentCoin;
+    IAgentCoin public agentCoin;
     bool public lpDeployed;
     uint256 public positionTokenId;
     address public deployer;
@@ -101,11 +110,11 @@ contract LPVault is Ownable {
     function setAgentCoin(address _agentCoin) external onlyOwner {
         require(_agentCoin != address(0), "Invalid AGENT");
         require(address(agentCoin) == address(0), "AGENT already set");
-        agentCoin = IERC20(_agentCoin);
+        agentCoin = IAgentCoin(_agentCoin);
         emit AgentCoinSet(_agentCoin);
     }
 
-    function deployLP(uint256 minUsdcOut) external {
+    function deployLP(uint256 minUsdcOut) external onlyOwner nonReentrant {
         require(!lpDeployed, "Already deployed");
         require(address(agentCoin) != address(0), "AgentCoin not set");
         require(address(this).balance >= LP_DEPLOY_THRESHOLD + UNCX_FLAT_FEE, "Below threshold");
@@ -116,7 +125,7 @@ contract LPVault is Ownable {
         // Swap ALL WETH → USDC (LP pair is AGENT/USDC)
         uint256 wethBalance = IERC20(WETH).balanceOf(address(this));
         uint256 usdcAmount = _swapWethToUsdc(wethBalance, minUsdcOut);
-        uint256 agentAmount = agentCoin.balanceOf(address(this));
+        uint256 agentAmount = IERC20(address(agentCoin)).balanceOf(address(this));
 
         require(agentAmount > 0, "No AGENT");
         require(usdcAmount > 0, "No USDC");
@@ -125,13 +134,21 @@ contract LPVault is Ownable {
         (address token0, address token1, uint256 amount0Desired, uint256 amount1Desired) =
             _orderedPositionAmounts(agentAmount, usdcAmount);
 
+        // Verify pool doesn't exist
+        address existingPool = IUniswapV3Factory(UNISWAP_V3_FACTORY).getPool(
+            token0,
+            token1,
+            FEE_TIER
+        );
+        require(existingPool == address(0), "Pool already exists");
+
         uint160 sqrtPriceX96 = _computeSqrtPriceX96(amount0Desired, amount1Desired);
         INonfungiblePositionManager(POSITION_MANAGER).createAndInitializePoolIfNecessary(
             token0, token1, FEE_TIER, sqrtPriceX96
         );
 
         // Mint full-range LP position
-        _approveToken(agentCoin, POSITION_MANAGER, agentAmount);
+        _approveToken(IERC20(address(agentCoin)), POSITION_MANAGER, agentAmount);
         _approveToken(IERC20(USDC), POSITION_MANAGER, usdcAmount);
 
         INonfungiblePositionManager.MintParams memory mintParams = INonfungiblePositionManager.MintParams({
@@ -150,14 +167,28 @@ contract LPVault is Ownable {
 
         (uint256 tokenId,,,) = INonfungiblePositionManager(POSITION_MANAGER).mint(mintParams);
 
+        positionTokenId = tokenId;
+        lpDeployed = true;
+
+        // Unlock transfers BEFORE UNCX lock — the locker calls collect() on the
+        // position which transfers dust AGENT tokens, requiring transfers to be enabled
+        agentCoin.setLPDeployed();
+
         // Lock position via UNCX
         INonfungiblePositionManager(POSITION_MANAGER).approve(UNCX_V3_LOCKER, tokenId);
         _lockPosition(tokenId);
 
-        positionTokenId = tokenId;
-        lpDeployed = true;
-
         emit LPDeployed(tokenId, agentAmount, usdcAmount);
+    }
+
+    /// @notice Recover WETH if deployLP() partially fails (e.g., swap succeeds but pool creation fails)
+    /// @dev Only callable by owner before LP is deployed
+    function emergencyUnwrapWeth() external onlyOwner {
+        require(!lpDeployed, "Already deployed");
+        uint256 wethBalance = IERC20(WETH).balanceOf(address(this));
+        if (wethBalance > 0) {
+            IWETH(WETH).withdraw(wethBalance);
+        }
     }
 
     function _swapWethToUsdc(uint256 amountIn, uint256 amountOutMinimum) internal returns (uint256 amountOut) {

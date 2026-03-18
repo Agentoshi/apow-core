@@ -52,6 +52,10 @@ contract MockTokenLP {
         totalSupply -= amount;
         payable(msg.sender).transfer(amount);
     }
+
+    function setLPDeployed() external {
+        // Mock implementation - do nothing
+    }
 }
 
 contract MockSwapRouterLP {
@@ -118,12 +122,20 @@ contract MockUNCXLockerLP {
     }
 }
 
+contract MockUniswapV3Factory {
+    function getPool(address, address, uint24) external pure returns (address) {
+        // Return zero address to simulate pool doesn't exist
+        return address(0);
+    }
+}
+
 contract LPVaultEdgeTest is Test {
     address internal constant WETH = 0x4200000000000000000000000000000000000006;
     address internal constant USDC = 0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913;
     address internal constant SWAP_ROUTER = 0x2626664c2603336E57B271c5C0b26F421741e481;
     address internal constant POSITION_MANAGER = 0x03a520b32C04BF3bEEf7BEb72E919cf822Ed34f1;
     address internal constant UNCX_V3_LOCKER = 0x231278eDd38B00B07fBd52120CEf685B9BaEBCC1;
+    address internal constant UNISWAP_V3_FACTORY = 0x33128a8fC17869897dcE68Ed026d694621f6FDfD;
 
     LPVault internal lpVault;
     MockTokenLP internal agentCoin;
@@ -137,6 +149,7 @@ contract LPVaultEdgeTest is Test {
         vm.etch(SWAP_ROUTER, address(new MockSwapRouterLP()).code);
         vm.etch(POSITION_MANAGER, address(new MockPositionManagerLP()).code);
         vm.etch(UNCX_V3_LOCKER, address(new MockUNCXLockerLP()).code);
+        vm.etch(UNISWAP_V3_FACTORY, address(new MockUniswapV3Factory()).code);
 
         lpVault = new LPVault(deployer);
         agentCoin = new MockTokenLP();
@@ -188,6 +201,7 @@ contract LPVaultEdgeTest is Test {
         LPVault v2 = new LPVault(deployer);
         vm.deal(address(v2), 5 ether);
 
+        vm.prank(deployer);
         vm.expectRevert("AgentCoin not set");
         v2.deployLP(0);
     }
@@ -196,6 +210,7 @@ contract LPVaultEdgeTest is Test {
         agentCoin.mint(address(lpVault), 2_100_000e18);
         vm.deal(address(lpVault), 4.93 ether); // exact: LP_DEPLOY_THRESHOLD + UNCX_FLAT_FEE
 
+        vm.prank(deployer);
         lpVault.deployLP(0);
         assertTrue(lpVault.lpDeployed());
     }
@@ -204,6 +219,7 @@ contract LPVaultEdgeTest is Test {
         agentCoin.mint(address(lpVault), 2_100_000e18);
         vm.deal(address(lpVault), 4.93 ether - 1);
 
+        vm.prank(deployer);
         vm.expectRevert("Below threshold");
         lpVault.deployLP(0);
     }
@@ -211,6 +227,7 @@ contract LPVaultEdgeTest is Test {
     function testDeployLP_NoAgentTokens_Reverts() public {
         vm.deal(address(lpVault), 5 ether);
 
+        vm.prank(deployer);
         vm.expectRevert("No AGENT");
         lpVault.deployLP(0);
     }
@@ -219,7 +236,13 @@ contract LPVaultEdgeTest is Test {
         agentCoin.mint(address(lpVault), 2_100_000e18);
         vm.deal(address(lpVault), 5 ether);
 
+        // Now only owner can call deployLP (security fix)
         vm.prank(other);
+        vm.expectRevert();
+        lpVault.deployLP(0);
+
+        // But deployer can call it
+        vm.prank(deployer);
         lpVault.deployLP(0);
         assertTrue(lpVault.lpDeployed());
     }
@@ -228,6 +251,7 @@ contract LPVaultEdgeTest is Test {
         agentCoin.mint(address(lpVault), 2_100_000e18);
         vm.deal(address(lpVault), 5 ether);
 
+        vm.prank(deployer);
         lpVault.deployLP(0);
         assertEq(lpVault.positionTokenId(), 1);
     }
@@ -236,6 +260,7 @@ contract LPVaultEdgeTest is Test {
         agentCoin.mint(address(lpVault), 2_100_000e18);
         vm.deal(address(lpVault), 5 ether);
 
+        vm.prank(deployer);
         lpVault.deployLP(0);
 
         MockUNCXLockerLP locker = MockUNCXLockerLP(UNCX_V3_LOCKER);
@@ -246,6 +271,7 @@ contract LPVaultEdgeTest is Test {
         agentCoin.mint(address(lpVault), 2_100_000e18);
         vm.deal(address(lpVault), 5 ether);
 
+        vm.prank(deployer);
         lpVault.deployLP(0);
 
         MockUNCXLockerLP locker = MockUNCXLockerLP(UNCX_V3_LOCKER);
@@ -256,6 +282,7 @@ contract LPVaultEdgeTest is Test {
         agentCoin.mint(address(lpVault), 2_100_000e18);
         vm.deal(address(lpVault), 5 ether);
 
+        vm.prank(deployer);
         lpVault.deployLP(0);
 
         MockUNCXLockerLP locker = MockUNCXLockerLP(UNCX_V3_LOCKER);
@@ -266,6 +293,7 @@ contract LPVaultEdgeTest is Test {
         agentCoin.mint(address(lpVault), 2_100_000e18);
         vm.deal(address(lpVault), 5 ether);
 
+        vm.prank(deployer);
         lpVault.deployLP(0);
 
         MockUNCXLockerLP locker = MockUNCXLockerLP(UNCX_V3_LOCKER);
@@ -276,6 +304,7 @@ contract LPVaultEdgeTest is Test {
         agentCoin.mint(address(lpVault), 2_100_000e18);
         vm.deal(address(lpVault), 5 ether);
 
+        vm.prank(deployer);
         lpVault.deployLP(0);
 
         MockPositionManagerLP pm = MockPositionManagerLP(POSITION_MANAGER);
@@ -286,6 +315,7 @@ contract LPVaultEdgeTest is Test {
         agentCoin.mint(address(lpVault), 2_100_000e18);
         vm.deal(address(lpVault), 5 ether);
 
+        vm.prank(deployer);
         lpVault.deployLP(0);
 
         assertEq(address(lpVault).balance, 0);
@@ -298,6 +328,7 @@ contract LPVaultEdgeTest is Test {
         agentCoin.mint(address(lpVault), 2_100_000e18);
         vm.deal(address(lpVault), 5 ether);
 
+        vm.prank(deployer);
         lpVault.deployLP(0);
 
         // After deploy, no WETH should remain (all swapped to USDC)
@@ -308,6 +339,7 @@ contract LPVaultEdgeTest is Test {
         agentCoin.mint(address(lpVault), 2_100_000e18);
         vm.deal(address(lpVault), 10 ether);
 
+        vm.prank(deployer);
         lpVault.deployLP(0);
 
         // All ETH consumed (wrapped + swapped + UNCX fee)
@@ -318,6 +350,7 @@ contract LPVaultEdgeTest is Test {
         agentCoin.mint(address(lpVault), 2_100_000e18);
         vm.deal(address(lpVault), 5 ether);
 
+        vm.prank(deployer);
         lpVault.deployLP(0);
 
         MockPositionManagerLP pm = MockPositionManagerLP(POSITION_MANAGER);

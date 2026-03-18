@@ -23,6 +23,10 @@ contract MockAgentCoin is IAgentCoin {
     function tokenEarnings(uint256 tokenId) external view returns (uint256) {
         return earnings[tokenId];
     }
+
+    function setLPDeployed() external {
+        // Mock implementation - do nothing
+    }
 }
 
 contract MiningAgentTest is Test {

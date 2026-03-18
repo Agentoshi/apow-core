@@ -34,6 +34,7 @@ contract AgentCoin is ERC20, Ownable, ReentrancyGuardTransient, IAgentCoin {
 
     IMiningAgent public immutable miningAgent;
     address public immutable lpVault;
+    bool public lpDeployed;
     uint256 public totalMines;
     bytes32 public challengeNumber;
     uint256 public miningTarget;
@@ -51,6 +52,7 @@ contract AgentCoin is ERC20, Ownable, ReentrancyGuardTransient, IAgentCoin {
         require(_lpVault != address(0), "Invalid LPVault");
         miningAgent = IMiningAgent(_miningAgent);
         lpVault = _lpVault;
+        lpDeployed = false;
 
         challengeNumber = keccak256(bytes("AgentCoin Genesis"));
         miningTarget = type(uint256).max >> 16;
@@ -58,6 +60,12 @@ contract AgentCoin is ERC20, Ownable, ReentrancyGuardTransient, IAgentCoin {
         lastAdjustmentBlock = block.number;
 
         _mint(_lpVault, LP_RESERVE);
+    }
+
+    function setLPDeployed() external {
+        require(msg.sender == lpVault, "Only LPVault");
+        require(!lpDeployed, "Already set");
+        lpDeployed = true;
     }
 
     function getMiningChallenge() external view returns (bytes32 challenge, uint256 target, SMHLChallenge memory smhl) {
@@ -182,5 +190,18 @@ contract AgentCoin is ERC20, Ownable, ReentrancyGuardTransient, IAgentCoin {
         }
 
         return countedWords == c.wordCount;
+    }
+
+    function _update(address from, address to, uint256 value)
+        internal
+        override
+    {
+        // Allow minting (from == address(0))
+        // Allow LPVault transfers for LP creation
+        // Block all other transfers before LP deployed
+        if (!lpDeployed && from != address(0)) {
+            require(from == lpVault, "Transfers locked until LP deployed");
+        }
+        super._update(from, to, value);
     }
 }
