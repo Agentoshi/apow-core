@@ -1,0 +1,387 @@
+# APoW Mining Skill
+
+> A self-contained guide for any AI agent to go from zero knowledge to actively mining AGENT tokens on Base.
+
+---
+
+## 1. What is APoW?
+
+Agent Proof-of-Work (APoW) is a mining protocol where AI agents solve constrained string-generation challenges called SMHL ("show me how to live") to mine AGENT tokens on the Base L2 network. Mining requires owning a Miner NFT (ERC-721 with rarity-based hashpower) and access to an LLM that can solve the SMHL constraints. Rewards start at 3 AGENT per mine (scaled by hashpower) and decay by 10% every 500,000 total network mines, with a hard cap of 21,000,000 AGENT.
+
+---
+
+## 2. Prerequisites
+
+| Requirement | Details |
+|---|---|
+| **Node.js** | v18 or higher |
+| **Base wallet** | A private key with ETH on Base (for gas + mint fee) |
+| **LLM API key** | OpenAI, Anthropic, or a local Ollama instance |
+| **git** | To clone the repository |
+
+---
+
+## 3. Step 1: Create a Base Wallet
+
+**Option A -- Foundry (`cast`)**
+```bash
+cast wallet new
+```
+This outputs an address and private key. Save the private key (0x-prefixed, 64 hex characters).
+
+**Option B -- Any wallet generator**
+Use viem, ethers.js, MetaMask, or any tool that produces a standard Ethereum private key.
+
+**Fund the wallet:**
+- Bridge ETH from Ethereum mainnet via [bridge.base.org](https://bridge.base.org)
+- Or transfer ETH directly from another Base wallet
+- **Minimum recommended balance:** 0.005 ETH (covers minting + several mining cycles)
+  - Mint fee: 0.002 ETH (max price at token #1, decays over time)
+  - Each mine transaction: ~0.001 ETH gas
+
+---
+
+## 4. Step 2: Install Miner Client
+
+```bash
+git clone https://github.com/APoW-Protocol/APoW.git
+cd APoW/miner
+npm install
+```
+
+The miner is a TypeScript CLI built with Commander.js. It has four commands: `setup`, `mint`, `mine`, and `stats`.
+
+---
+
+## 5. Step 3: Configure Environment
+
+Create a `.env` file in the `miner/` directory:
+
+```bash
+# === Required ===
+
+# Your wallet private key (0x-prefixed, 64 hex chars)
+PRIVATE_KEY=0xYOUR_PRIVATE_KEY_HERE
+
+# Deployed contract addresses (set after mainnet deployment)
+MINING_AGENT_ADDRESS=0xTBD
+AGENT_COIN_ADDRESS=0xTBD
+
+# === LLM Configuration ===
+
+# Provider: "openai" | "anthropic" | "ollama"
+LLM_PROVIDER=openai
+
+# API key (not required if LLM_PROVIDER=ollama)
+LLM_API_KEY=sk-your-api-key
+
+# Model name (provider-specific)
+LLM_MODEL=gpt-4o
+
+# === Network ===
+
+# Base RPC endpoint (default: https://mainnet.base.org)
+RPC_URL=https://mainnet.base.org
+
+# Chain: "base" | "baseSepolia" (auto-detected from RPC_URL if omitted)
+CHAIN=base
+```
+
+### Environment Variable Reference
+
+| Variable | Required | Default | Description |
+|---|---|---|---|
+| `PRIVATE_KEY` | Yes | -- | Wallet private key (0x + 64 hex chars) |
+| `MINING_AGENT_ADDRESS` | Yes | -- | Deployed MiningAgent contract address |
+| `AGENT_COIN_ADDRESS` | Yes | -- | Deployed AgentCoin contract address |
+| `LLM_PROVIDER` | No | `openai` | LLM provider: `openai`, `anthropic`, or `ollama` |
+| `LLM_API_KEY` | Conditional | -- | Required for `openai` and `anthropic`, not needed for `ollama` |
+| `LLM_MODEL` | No | `gpt-4o` | Model identifier passed to the provider |
+| `RPC_URL` | No | `https://mainnet.base.org` | Base JSON-RPC endpoint |
+| `CHAIN` | No | `base` | Network selector; auto-detects `baseSepolia` if RPC URL contains "sepolia" |
+
+### LLM Provider Recommendations
+
+| Provider | Model | Cost per call | Notes |
+|---|---|---|---|
+| OpenAI | `gpt-4o-mini` | ~$0.001 | Cheapest cloud option |
+| OpenAI | `gpt-4o` | ~$0.005 | Default; good reliability |
+| Anthropic | `claude-sonnet-4-5-20250929` | ~$0.005 | High accuracy on constrained generation |
+| Ollama | `llama3.1` | Free (local) | Requires local GPU; variable accuracy |
+
+### RPC Recommendations
+
+The default `https://mainnet.base.org` is rate-limited. For production mining, use a dedicated RPC:
+- [Alchemy](https://www.alchemy.com/) -- `https://base-mainnet.g.alchemy.com/v2/YOUR_KEY`
+- [Infura](https://infura.io/) -- `https://base-mainnet.infura.io/v3/YOUR_KEY`
+- [QuickNode](https://www.quicknode.com/) -- custom endpoint
+
+---
+
+## 6. Step 4: Mint a Mining Rig
+
+```bash
+npx tsx src/index.ts mint
+```
+
+**What happens:**
+1. The client calls `getChallenge(yourAddress)` on the MiningAgent contract, which generates a random SMHL challenge and stores the seed on-chain. This is a write transaction (costs gas).
+2. The client derives the challenge parameters from the stored seed and sends them to your LLM.
+3. The LLM generates a string satisfying all constraints (length, word count, character position, ASCII sum).
+4. The client calls `mint(solution)` with the mint fee attached. The contract verifies the SMHL solution on-chain.
+5. On success, an ERC-721 Miner NFT is minted to your wallet with a randomly determined rarity and hashpower.
+6. The mint fee is forwarded to the LPVault (used for AGENT/ETH liquidity).
+
+**Challenge expiry:** 20 seconds from `getChallenge` to `mint`. The LLM must solve quickly.
+
+### Mint Price
+
+The mint price starts at 0.002 ETH and decays exponentially:
+- Decreases by 5% every 100 mints
+- Floors at 0.0002 ETH
+- Formula: `price = max(0.002 * 0.95^(totalMinted / 100), 0.0002)` ETH
+
+### Rarity Table
+
+| Tier | Name | Hashpower | Reward Multiplier | Probability |
+|---|---|---|---|---|
+| 0 | Common | 100 | 1.00x | 60% |
+| 1 | Uncommon | 150 | 1.50x | 25% |
+| 2 | Rare | 200 | 2.00x | 10% |
+| 3 | Epic | 300 | 3.00x | 4% |
+| 4 | Mythic | 500 | 5.00x | 1% |
+
+**Max supply:** 10,000 Miner NFTs.
+
+---
+
+## 7. Step 5: Start Mining
+
+```bash
+npx tsx src/index.ts mine <tokenId>
+```
+
+Replace `<tokenId>` with the token ID printed after minting (e.g., `npx tsx src/index.ts mine 42`).
+
+### What Each Mining Cycle Does
+
+1. **Ownership check** -- verifies your wallet owns the specified token.
+2. **Supply check** -- confirms mineable supply is not exhausted.
+3. **Fetch challenge** -- reads `getMiningChallenge()` from the AgentCoin contract, which returns:
+   - `challengeNumber` (bytes32) -- the current PoW challenge hash
+   - `miningTarget` (uint256) -- the difficulty target
+   - `smhl` -- the SMHL string-generation challenge
+4. **Solve SMHL** -- sends the SMHL constraints to your LLM. The client retries up to 3 times with local validation before submission.
+5. **Grind nonce** -- brute-force searches for a `nonce` where `keccak256(challengeNumber, minerAddress, nonce) < miningTarget`.
+6. **Submit proof** -- calls `mine(nonce, smhlSolution, tokenId)` on AgentCoin. The contract verifies both the hash and SMHL solution on-chain.
+7. **Collect reward** -- AGENT tokens are minted directly to your wallet.
+8. **Wait for next block** -- the protocol enforces one mine per block network-wide. The client waits for block advancement before the next cycle.
+
+### Reward Economics
+
+| Parameter | Value |
+|---|---|
+| Base reward | 3 AGENT |
+| Hashpower scaling | `reward = baseReward * hashpower / 100` |
+| Era interval | Every 500,000 total mines |
+| Era decay | 10% reduction per era (`reward * 90 / 100`) |
+| Max mineable supply | 18,900,000 AGENT (21M total - 2.1M LP reserve) |
+| Difficulty adjustment | Every 64 mines, targeting 5 blocks between mines |
+
+**Example rewards (Common miner, 100 hashpower = 1.00x):**
+
+| Era | Total Network Mines | Reward per Mine |
+|---|---|---|
+| 0 | 0 -- 499,999 | 3.00 AGENT |
+| 1 | 500,000 -- 999,999 | 2.70 AGENT |
+| 2 | 1,000,000 -- 1,499,999 | 2.43 AGENT |
+| 3 | 1,500,000 -- 1,999,999 | 2.187 AGENT |
+
+A Mythic miner (5.00x) earns 15.00 AGENT per mine in Era 0.
+
+### Cost Per Mine
+
+- **Gas:** ~0.001 ETH per `mine()` transaction on Base
+- **LLM:** varies by provider ($0.001--$0.005 per SMHL solve)
+- **Total:** ~$0.005--$0.02 per mining cycle at typical gas prices
+
+### Error Handling
+
+The miner has built-in resilience:
+- **Exponential backoff** on transient failures (starts at 2s, caps at 60s)
+- **Max 10 consecutive failures** before the miner exits
+- **Fatal errors** cause immediate exit: `"Not your miner"`, `"Supply exhausted"`, `"No contracts"`
+- **Block timing** is handled automatically: if the block hasn't advanced, the miner waits
+
+---
+
+## 8. Step 6: Monitor
+
+```bash
+# Network stats only
+npx tsx src/index.ts stats
+
+# Network stats + specific miner stats
+npx tsx src/index.ts stats <tokenId>
+```
+
+**Network stats output:**
+- Total mines (network-wide)
+- Total AGENT minted
+- Current mining target (difficulty)
+- Your wallet's AGENT balance
+
+**Miner stats output (when tokenId provided):**
+- Rarity tier and name
+- Hashpower multiplier
+- Mint block number
+- Total mine count for this rig
+- Total AGENT earned by this rig
+
+**Show environment template:**
+```bash
+npx tsx src/index.ts setup
+```
+
+---
+
+## 9. Advanced
+
+### Running Multiple Rigs
+
+Each miner NFT has its own token ID. Run separate processes per rig:
+
+```bash
+# Terminal 1
+npx tsx src/index.ts mine 1
+
+# Terminal 2
+npx tsx src/index.ts mine 2
+```
+
+All rigs can share the same wallet (same `PRIVATE_KEY`). Note: the protocol enforces one mine per block network-wide, so multiple rigs from the same address will compete with each other and the network.
+
+### Local LLM Setup (Ollama)
+
+```bash
+# Install Ollama
+curl -fsSL https://ollama.ai/install.sh | sh
+
+# Pull a model
+ollama pull llama3.1
+
+# Configure .env
+LLM_PROVIDER=ollama
+LLM_MODEL=llama3.1
+# LLM_API_KEY is not needed for Ollama
+```
+
+Ollama runs on `http://127.0.0.1:11434` by default. The miner connects there automatically.
+
+**Trade-off:** Free inference, but local models may have lower accuracy on the constrained SMHL challenges. The miner retries up to 3 times per challenge, but persistent failures will slow mining.
+
+### Custom RPC Endpoints
+
+Set `RPC_URL` in `.env` to any Base-compatible JSON-RPC endpoint. The `CHAIN` variable is auto-detected from the URL (if it contains "sepolia", `baseSepolia` is used), or you can set it explicitly.
+
+### Agent Wallet (ERC-8004)
+
+Each Miner NFT supports an on-chain agent wallet via the ERC-8004 standard:
+- `getAgentWallet(tokenId)` -- returns the registered agent wallet address
+- `setAgentWallet(tokenId, newWallet, deadline, signature)` -- sets a new agent wallet (requires EIP-712 signature from the new wallet)
+- `unsetAgentWallet(tokenId)` -- removes the agent wallet
+- Agent wallet is automatically cleared on NFT transfer
+
+This allows a miner NFT owner to delegate mining operations to a separate hot wallet.
+
+### Testnet (Base Sepolia)
+
+To mine on testnet, set:
+```bash
+RPC_URL=https://sepolia.base.org
+CHAIN=baseSepolia
+```
+Use the corresponding testnet contract addresses.
+
+---
+
+## 10. Troubleshooting
+
+| Error | Cause | Fix |
+|---|---|---|
+| `PRIVATE_KEY is required for minting and mining commands.` | Missing or unset `PRIVATE_KEY` in `.env` | Add `PRIVATE_KEY=0x...` to your `.env` file |
+| `PRIVATE_KEY must be a 32-byte hex string prefixed with 0x.` | Malformed private key | Ensure key is exactly `0x` + 64 hex characters |
+| `MINING_AGENT_ADDRESS is required.` | Contract address not set | Set `MINING_AGENT_ADDRESS` in `.env` |
+| `AGENT_COIN_ADDRESS is required.` | Contract address not set | Set `AGENT_COIN_ADDRESS` in `.env` |
+| `LLM_API_KEY is required for openai.` | Missing API key for cloud provider | Set `LLM_API_KEY` in `.env`, or switch to `ollama` |
+| `Insufficient fee` | Not enough ETH sent with mint | Check `getMintPrice()` and ensure wallet has enough ETH |
+| `Sold out` | All 10,000 Miner NFTs minted | No more rigs available; buy one on secondary market |
+| `Expired` | SMHL challenge expired (>20s) | Your LLM is too slow; use a faster model or provider |
+| `Invalid SMHL` | LLM produced an incorrect solution | Retry; if persistent, switch to a more capable model |
+| `Not your miner` | Token ID not owned by your wallet | Verify `PRIVATE_KEY` matches the NFT owner; check token ID |
+| `Supply exhausted` | All 18.9M mineable AGENT has been minted | Mining is complete; no more rewards available |
+| `One mine per block` | Another mine was confirmed in this block | Automatic; the miner waits for the next block |
+| `No contracts` | Calling from a contract, not an EOA | Mining requires an externally owned account (EOA) |
+| `Invalid hash` | Nonce does not meet difficulty target | Bug in nonce grinding; should not happen under normal operation |
+| `Nonce too high` | Wallet nonce desync | Reset nonce in wallet or wait for pending transactions to confirm |
+| `Anthropic request failed: 429` | Rate limited by Anthropic API | Reduce mining frequency or upgrade API plan |
+| `Ollama request failed: 500` | Ollama server error | Check `ollama serve` is running; restart if needed |
+| `SMHL solve failed after 3 attempts` | LLM cannot satisfy constraints | Switch to a more capable model (e.g., `gpt-4o` or `claude-sonnet-4-5-20250929`) |
+| `Fee forward failed` | LPVault rejected the ETH transfer | LPVault may not be set; check contract deployment |
+| `10 consecutive failures` | Repeated transient errors | Check RPC connectivity, wallet balance, and LLM availability |
+
+---
+
+## 11. Contract Addresses
+
+| Contract | Address |
+|---|---|
+| MiningAgent (ERC-721) | TBD |
+| AgentCoin (ERC-20) | TBD |
+| LPVault | TBD |
+
+**Network:** Base (Chain ID 8453)
+
+**Token details:**
+- **Name:** AgentCoin
+- **Symbol:** AGENT
+- **Decimals:** 18
+- **Max supply:** 21,000,000 AGENT
+- **LP reserve:** 2,100,000 AGENT (10%, minted to LPVault at deployment)
+- **Mineable supply:** 18,900,000 AGENT
+
+**Miner NFT details:**
+- **Name:** AgentCoin Miner
+- **Symbol:** MINER
+- **Standard:** ERC-721 Enumerable + ERC-8004 (Agent Registry)
+- **Max supply:** 10,000
+
+---
+
+## Quick Start (TL;DR)
+
+```bash
+# 1. Clone and install
+git clone https://github.com/APoW-Protocol/APoW.git
+cd APoW/miner && npm install
+
+# 2. Create .env (fill in your values)
+cat > .env << 'EOF'
+PRIVATE_KEY=0xYOUR_KEY
+MINING_AGENT_ADDRESS=0xTBD
+AGENT_COIN_ADDRESS=0xTBD
+LLM_PROVIDER=openai
+LLM_API_KEY=sk-your-key
+LLM_MODEL=gpt-4o-mini
+RPC_URL=https://mainnet.base.org
+EOF
+
+# 3. Mint a mining rig
+npx tsx src/index.ts mint
+
+# 4. Start mining (use the token ID from step 3)
+npx tsx src/index.ts mine 1
+
+# 5. Check stats
+npx tsx src/index.ts stats 1
+```

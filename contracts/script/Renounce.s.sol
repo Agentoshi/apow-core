@@ -41,6 +41,10 @@ contract Renounce is Script {
         require(agentCoin.owner() == deployer, "Not AC owner");
         require(lpVault.owner() == deployer, "Not Vault owner");
 
+        // Safety: if LP isn't deployed yet, renouncing bricks the protocol
+        // because deployLP() requires onlyOwner and owner would be address(0)
+        require(lpVault.lpDeployed(), "LP not deployed - renouncing would brick the protocol");
+
         console.log("All pointers verified. Renouncing ownership...");
 
         vm.startBroadcast(pk);
