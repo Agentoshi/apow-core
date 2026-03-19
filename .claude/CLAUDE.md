@@ -15,12 +15,17 @@ agentcoin/
 │   │   └── interfaces/           # IAgentCoin.sol, IMiningAgent.sol
 │   ├── test/                     # 231 tests across 12 suites (unit, edge, integration, simulation, security, fork)
 │   │   ├── AgentCoin.t.sol
+│   │   ├── AgentCoinEdge.t.sol
 │   │   ├── MiningAgent.t.sol
+│   │   ├── MiningAgentEdge.t.sol
 │   │   ├── LPVault.t.sol
+│   │   ├── LPVaultEdge.t.sol
 │   │   ├── LPVaultFork.t.sol     # Fork tests (require --fork-url $BASE_RPC)
-│   │   ├── MinerArt.t.sol
+│   │   ├── LPSecurity.t.sol
+│   │   ├── MinerArtEdge.t.sol
 │   │   ├── Integration.t.sol
-│   │   └── smoke/
+│   │   ├── RenounceImmutability.t.sol
+│   │   └── Simulation.t.sol
 │   ├── script/
 │   │   ├── Deploy.s.sol          # Step 1: Deploy + cross-wire all 3 contracts
 │   │   ├── DeployLP.s.sol        # Step 6: Quote swap + deploy LP + UNCX lock
@@ -32,11 +37,16 @@ agentcoin/
 │   ├── src/
 │   │   ├── index.ts              # CLI entry (mint, mine, stats commands)
 │   │   ├── config.ts             # Env var loader + validation
+│   │   ├── detect.ts             # Chain/contract auto-detection
+│   │   ├── errors.ts             # Error classification and handling
+│   │   ├── explorer.ts           # Block explorer URL generation
 │   │   ├── miner.ts              # Mining loop (nonce grinding + SMHL solving)
 │   │   ├── mint.ts               # Mint workflow (SMHL challenge → submit tx)
+│   │   ├── preflight.ts          # Pre-mine validation checks
+│   │   ├── smhl.ts               # SMHL solver (OpenAI/Anthropic/Ollama/Gemini)
 │   │   ├── stats.ts              # On-chain stats reader
-│   │   ├── wallet.ts             # Viem wallet client setup
-│   │   └── smhl.ts               # SMHL solver (OpenAI/Anthropic/Ollama)
+│   │   ├── ui.ts                 # Terminal UI formatting
+│   │   └── wallet.ts             # Viem wallet client setup
 │   └── package.json              # private:true (not yet published)
 ├── docs/                         # Protocol documentation
 │   ├── DEPLOY_PLAN.md            # 10-step mainnet deployment runbook (self-contained)

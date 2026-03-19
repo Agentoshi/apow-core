@@ -122,9 +122,9 @@ cp ../.env.example .env  # fill in contract addresses + keys
 
 | Command | Description |
 |---------|-------------|
-| `npx tsx src/index.ts setup` | Check wallet balance, contract connectivity, NFT ownership |
+| `npx tsx src/index.ts setup` | Interactive setup wizard — configure wallet, RPC, and LLM |
 | `npx tsx src/index.ts mint` | Mint a MiningAgent NFT (solves SMHL challenge) |
-| `npx tsx src/index.ts mine <tokenId>` | Mine $AGENT with your NFT (SMHL + PoW loop) |
+| `npx tsx src/index.ts mine [tokenId]` | Mine $AGENT with your NFT (SMHL + PoW loop) |
 | `npx tsx src/index.ts stats [tokenId]` | View mining stats, earnings, difficulty |
 
 **Configuration** (`.env`):
@@ -132,7 +132,7 @@ cp ../.env.example .env  # fill in contract addresses + keys
 - `PRIVATE_KEY` — EOA private key for mining transactions
 - `RPC_URL` — Base RPC endpoint
 - `MINING_AGENT_ADDRESS` / `AGENT_COIN_ADDRESS` — deployed contract addresses
-- `LLM_PROVIDER` — `openai`, `anthropic`, or `ollama`
+- `LLM_PROVIDER` — `openai`, `anthropic`, `ollama`, or `gemini`
 - `LLM_MODEL` — model name (e.g. `gpt-4o-mini`, `claude-sonnet-4-5-20250929`)
 
 The miner solves two challenges per mine: an SMHL string-manipulation puzzle (requires LLM reasoning) and a SHA-3 PoW nonce grind below the current difficulty target.

@@ -471,19 +471,21 @@ contract AgentCoinEdgeTest is Test {
     }
 
     function testDifficultyAdjustment_TargetNeverZero() public {
-        // Set target to 2, trigger adjustment that would halve it to 1
-        // Use easy target so nonce 0 works
+        // The zero-floor guard (adjustedTarget == 0 ? 1 : adjustedTarget) prevents
+        // target from reaching 0. With max target and extreme fast mining, the
+        // overflow branch caps adjustedTarget at type(uint256).max.
+        // Note: The exact zero-floor branch (target=1 → halve → 0 → clamp to 1)
+        // is unreachable via mining since hash < 1 is unsatisfiable.
         _setMiningTarget(type(uint256).max);
         vm.store(address(ac), SLOT_MINES_SINCE_ADJ, bytes32(uint256(63)));
         vm.store(address(ac), SLOT_LAST_ADJ_BLOCK, bytes32(uint256(99)));
         vm.store(address(ac), SLOT_LAST_MINE_BLOCK, bytes32(uint256(99)));
 
         vm.roll(100);
-        // This triggers adjustment. With max target and overflow protection,
-        // the target should be capped at type(uint256).max
         _mine(user, 1, 0);
 
-        assertTrue(ac.miningTarget() >= 1, "Target should never be 0");
+        // With max target: overflow protection caps at type(uint256).max (not 0)
+        assertEq(ac.miningTarget(), type(uint256).max, "Overflow should cap at max, never zero");
     }
 
     // ============ Challenge Rotation ============

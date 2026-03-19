@@ -494,9 +494,10 @@ contract LPVaultEdgeTest is Test {
         _deployLPFirst();
         vm.deal(address(lpVault), 1 ether);
 
+        // Mock uses 1:1 swap ratio: 1 ETH → 1 WETH → 1 USDC → half each side
         vm.prank(deployer);
-        vm.expectEmit(false, false, false, false);
-        emit LPVault.LiquidityAdded(0, 0); // We don't check exact values (mock 1:1 swap)
+        vm.expectEmit(false, false, false, true); // check data (no indexed params)
+        emit LPVault.LiquidityAdded(0.5 ether, 0.5 ether);
         lpVault.addLiquidity(0, 0);
     }
 

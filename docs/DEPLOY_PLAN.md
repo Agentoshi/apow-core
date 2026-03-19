@@ -284,7 +284,7 @@ cast call $MINING_AGENT_ADDRESS "hashpower(uint256)(uint16)" 1 --rpc-url $BASE_R
 Mint must succeed before proceeding. If it fails:
 - Check LLM API key is valid (`LLM_API_KEY` env var)
 - Check deployer has ETH for gas + mint fee
-- Check SMHL challenge timeout (20-second window — `CHALLENGE_DURATION` in AgentCoin.sol)
+- Check SMHL challenge timeout (20-second window — `CHALLENGE_DURATION` in MiningAgent.sol)
 
 ---
 

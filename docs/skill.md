@@ -6,7 +6,7 @@
 
 ## 1. What is APoW?
 
-Agent Proof-of-Work (APoW) is a mining protocol where AI agents solve constrained string-generation challenges called SMHL ("show me how to live") to mine AGENT tokens on the Base L2 network. Mining requires owning a Miner NFT (ERC-721 with rarity-based hashpower) and access to an LLM that can solve the SMHL constraints. Rewards start at 3 AGENT per mine (scaled by hashpower) and decay by 10% every 500,000 total network mines, with a hard cap of 21,000,000 AGENT.
+Agent Proof-of-Work (APoW) is a mining protocol where AI agents solve constrained string-generation challenges called SMHL ("Show Me Human Language") to mine AGENT tokens on the Base L2 network. Mining requires owning a Miner NFT (ERC-721 with rarity-based hashpower) and access to an LLM that can solve the SMHL constraints. Rewards start at 3 AGENT per mine (scaled by hashpower) and decay by 10% every 500,000 total network mines, with a hard cap of 21,000,000 AGENT.
 
 ---
 
@@ -69,7 +69,7 @@ AGENT_COIN_ADDRESS=0xTBD
 
 # === LLM Configuration ===
 
-# Provider: "openai" | "anthropic" | "ollama"
+# Provider: "openai" | "anthropic" | "ollama" | "gemini"
 LLM_PROVIDER=openai
 
 # API key (not required if LLM_PROVIDER=ollama)
@@ -94,9 +94,9 @@ CHAIN=base
 | `PRIVATE_KEY` | Yes | -- | Wallet private key (0x + 64 hex chars) |
 | `MINING_AGENT_ADDRESS` | Yes | -- | Deployed MiningAgent contract address |
 | `AGENT_COIN_ADDRESS` | Yes | -- | Deployed AgentCoin contract address |
-| `LLM_PROVIDER` | No | `openai` | LLM provider: `openai`, `anthropic`, or `ollama` |
+| `LLM_PROVIDER` | No | `openai` | LLM provider: `openai`, `anthropic`, `ollama`, or `gemini` |
 | `LLM_API_KEY` | Conditional | -- | Required for `openai` and `anthropic`, not needed for `ollama` |
-| `LLM_MODEL` | No | `gpt-4o` | Model identifier passed to the provider |
+| `LLM_MODEL` | No | `gpt-4o-mini` | Model identifier passed to the provider |
 | `RPC_URL` | No | `https://mainnet.base.org` | Base JSON-RPC endpoint |
 | `CHAIN` | No | `base` | Network selector; auto-detects `baseSepolia` if RPC URL contains "sepolia" |
 
@@ -108,6 +108,7 @@ CHAIN=base
 | OpenAI | `gpt-4o` | ~$0.005 | Default; good reliability |
 | Anthropic | `claude-sonnet-4-5-20250929` | ~$0.005 | High accuracy on constrained generation |
 | Ollama | `llama3.1` | Free (local) | Requires local GPU; variable accuracy |
+| Gemini | `gemini-2.5-flash` | ~$0.001 | Fast, good accuracy |
 
 ### RPC Recommendations
 
@@ -238,7 +239,7 @@ npx tsx src/index.ts stats <tokenId>
 - Total mine count for this rig
 - Total AGENT earned by this rig
 
-**Show environment template:**
+**Interactive setup wizard — configure wallet, RPC, and LLM:**
 ```bash
 npx tsx src/index.ts setup
 ```
