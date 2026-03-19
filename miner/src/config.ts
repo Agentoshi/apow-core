@@ -6,7 +6,7 @@ import { base, baseSepolia } from "viem/chains";
 
 loadEnv();
 
-export type LlmProvider = "openai" | "anthropic" | "ollama" | "gemini";
+export type LlmProvider = "openai" | "anthropic" | "ollama" | "gemini" | "claude-code" | "codex";
 export type ChainName = "base" | "baseSepolia";
 
 export interface AppConfig {
@@ -36,7 +36,7 @@ const DEFAULT_AGENT_COIN_ADDRESS = undefined;
 const EXPENSIVE_MODELS = ["gpt-4o", "gpt-4", "claude-3-opus", "claude-3-5-sonnet"];
 
 function normalizeProvider(value?: string): LlmProvider {
-  if (value === "anthropic" || value === "ollama" || value === "openai" || value === "gemini") {
+  if (value === "anthropic" || value === "ollama" || value === "openai" || value === "gemini" || value === "claude-code" || value === "codex") {
     return value;
   }
 
@@ -82,6 +82,7 @@ function parseAddress(envKey: string, fallback: Address | undefined): Address {
 }
 
 function resolveLlmApiKey(provider: LlmProvider): string | undefined {
+  if (provider === "claude-code" || provider === "codex") return "";
   if (process.env.LLM_API_KEY) return process.env.LLM_API_KEY;
   switch (provider) {
     case "openai": return process.env.OPENAI_API_KEY;
@@ -115,7 +116,7 @@ export function requirePrivateKey(): Hex {
 }
 
 export function requireLlmApiKey(): string {
-  if (config.llmProvider === "ollama") {
+  if (config.llmProvider === "ollama" || config.llmProvider === "claude-code" || config.llmProvider === "codex") {
     return "";
   }
 

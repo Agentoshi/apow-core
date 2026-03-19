@@ -126,7 +126,10 @@ export async function runMintFlow(): Promise<void> {
     functionName: "getChallenge",
     args: [account.address],
   });
-  await publicClient.waitForTransactionReceipt({ hash: challengeTx });
+  const challengeReceipt = await publicClient.waitForTransactionReceipt({ hash: challengeTx });
+  if (challengeReceipt.status === "reverted") {
+    throw new Error("Challenge request reverted on-chain");
+  }
   challengeSpinner.stop("Requesting challenge... done");
 
   const challengeSeed = (await publicClient.readContract({
@@ -166,6 +169,9 @@ export async function runMintFlow(): Promise<void> {
   });
   mintSpinner.update("Waiting for confirmation...");
   const receipt = await publicClient.waitForTransactionReceipt({ hash: mintTx });
+  if (receipt.status === "reverted") {
+    throw new Error("Mint transaction reverted on-chain");
+  }
   mintSpinner.stop("Minting... confirmed");
 
   const nextTokenIdAfter = (await publicClient.readContract({

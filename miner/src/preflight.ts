@@ -93,6 +93,8 @@ export async function runPreflight(level: PreflightLevel): Promise<void> {
     // Check 5: LLM key set
     if (config.llmProvider === "ollama") {
       results.push({ label: `LLM provider: ollama (${config.ollamaUrl})`, passed: true });
+    } else if (config.llmProvider === "claude-code" || config.llmProvider === "codex") {
+      results.push({ label: `LLM provider: ${config.llmProvider} (local CLI)`, passed: true });
     } else if (config.llmApiKey) {
       results.push({ label: `LLM provider: ${config.llmProvider} (key set)`, passed: true });
     } else {

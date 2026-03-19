@@ -1,3 +1,4 @@
+import { execFile } from "node:child_process";
 import OpenAI from "openai";
 
 import { config, requireLlmApiKey } from "./config";
@@ -112,7 +113,7 @@ async function requestOpenAiSolution(prompt: string): Promise<string> {
       },
       { role: "user", content: prompt },
     ],
-  });
+  }, { timeout: 15_000 });
 
   return response.choices[0]?.message.content ?? "";
 }
@@ -120,6 +121,7 @@ async function requestOpenAiSolution(prompt: string): Promise<string> {
 async function requestAnthropicSolution(prompt: string): Promise<string> {
   const response = await fetch("https://api.anthropic.com/v1/messages", {
     method: "POST",
+    signal: AbortSignal.timeout(15_000),
     headers: {
       "content-type": "application/json",
       "x-api-key": requireLlmApiKey(),
@@ -135,6 +137,13 @@ async function requestAnthropicSolution(prompt: string): Promise<string> {
     }),
   });
 
+  if (response.status === 429) {
+    const retryAfter = response.headers.get("retry-after");
+    const waitMs = retryAfter ? parseInt(retryAfter) * 1000 : 5000;
+    await new Promise((r) => setTimeout(r, waitMs));
+    throw new Error(`Rate limited by Anthropic — retrying`);
+  }
+
   if (!response.ok) {
     throw new Error(`Anthropic request failed: ${response.status} ${response.statusText}`);
   }
@@ -149,6 +158,7 @@ async function requestAnthropicSolution(prompt: string): Promise<string> {
 async function requestOllamaSolution(prompt: string): Promise<string> {
   const response = await fetch(`${config.ollamaUrl}/api/generate`, {
     method: "POST",
+    signal: AbortSignal.timeout(15_000),
     headers: { "content-type": "application/json" },
     body: JSON.stringify({
       model: config.llmModel,
@@ -162,6 +172,13 @@ async function requestOllamaSolution(prompt: string): Promise<string> {
       options: { temperature: 0 },
     }),
   });
+
+  if (response.status === 429) {
+    const retryAfter = response.headers.get("retry-after");
+    const waitMs = retryAfter ? parseInt(retryAfter) * 1000 : 5000;
+    await new Promise((r) => setTimeout(r, waitMs));
+    throw new Error(`Rate limited by Ollama — retrying`);
+  }
 
   if (!response.ok) {
     throw new Error(`Ollama request failed: ${response.status} ${response.statusText}`);
@@ -177,6 +194,7 @@ async function requestGeminiSolution(prompt: string): Promise<string> {
     `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${requireLlmApiKey()}`,
     {
       method: "POST",
+      signal: AbortSignal.timeout(15_000),
       headers: { "content-type": "application/json" },
       body: JSON.stringify({
         systemInstruction: {
@@ -187,6 +205,13 @@ async function requestGeminiSolution(prompt: string): Promise<string> {
       }),
     },
   );
+
+  if (response.status === 429) {
+    const retryAfter = response.headers.get("retry-after");
+    const waitMs = retryAfter ? parseInt(retryAfter) * 1000 : 5000;
+    await new Promise((r) => setTimeout(r, waitMs));
+    throw new Error(`Rate limited by Gemini — retrying`);
+  }
 
   if (!response.ok) {
     throw new Error(`Gemini request failed: ${response.status} ${response.statusText}`);
@@ -199,6 +224,30 @@ async function requestGeminiSolution(prompt: string): Promise<string> {
   return data.candidates?.[0]?.content?.parts?.[0]?.text ?? "";
 }
 
+async function requestClaudeCodeSolution(prompt: string): Promise<string> {
+  return new Promise((resolve, reject) => {
+    execFile("claude", ["-p", prompt, "--no-input"], { timeout: 15_000 }, (error, stdout, stderr) => {
+      if (error) {
+        reject(new Error(`Claude Code error: ${error.message}`));
+        return;
+      }
+      resolve(stdout.trim());
+    });
+  });
+}
+
+async function requestCodexSolution(prompt: string): Promise<string> {
+  return new Promise((resolve, reject) => {
+    execFile("codex", ["exec", prompt, "--full-auto"], { timeout: 15_000 }, (error, stdout, stderr) => {
+      if (error) {
+        reject(new Error(`Codex error: ${error.message}`));
+        return;
+      }
+      resolve(stdout.trim());
+    });
+  });
+}
+
 async function requestProviderSolution(prompt: string): Promise<string> {
   switch (config.llmProvider) {
     case "anthropic":
@@ -207,6 +256,10 @@ async function requestProviderSolution(prompt: string): Promise<string> {
       return requestGeminiSolution(prompt);
     case "ollama":
       return requestOllamaSolution(prompt);
+    case "claude-code":
+      return requestClaudeCodeSolution(prompt);
+    case "codex":
+      return requestCodexSolution(prompt);
     case "openai":
     default:
       return requestOpenAiSolution(prompt);

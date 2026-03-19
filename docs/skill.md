@@ -22,6 +22,8 @@ npx tsx src/index.ts wallet new
 # Save the private key — you'll need it next
 
 # 3. Interactive setup (creates .env with wallet, RPC, LLM config)
+#    Supports API providers (OpenAI, Anthropic, Gemini, Ollama)
+#    or session providers (Claude Code, Codex) — no API key needed
 npx tsx src/index.ts setup
 
 # 4. Fund the wallet with ≥0.005 ETH on Base (see "Funding Your Wallet" section)
@@ -62,7 +64,7 @@ The miner client validates locally before submitting. If validation fails, it re
 |---|---|
 | **Node.js** | v18 or higher |
 | **Base wallet** | A private key with ETH on Base (for gas + mint fee) |
-| **LLM API key** | OpenAI, Anthropic, Gemini, or a local Ollama instance |
+| **LLM access** | API key (OpenAI, Anthropic, Gemini), local Ollama, or Claude Code / Codex CLI |
 | **git** | To clone the repository |
 
 ---
@@ -156,7 +158,7 @@ AGENT_COIN_ADDRESS=0xTBD
 
 # === LLM Configuration ===
 
-# Provider: "openai" | "anthropic" | "ollama" | "gemini"
+# Provider: "openai" | "anthropic" | "ollama" | "gemini" | "claude-code" | "codex"
 LLM_PROVIDER=openai
 
 # API key (not required if LLM_PROVIDER=ollama)
@@ -181,8 +183,8 @@ CHAIN=base
 | `PRIVATE_KEY` | Yes | -- | Wallet private key (0x + 64 hex chars) |
 | `MINING_AGENT_ADDRESS` | Yes | -- | Deployed MiningAgent contract address |
 | `AGENT_COIN_ADDRESS` | Yes | -- | Deployed AgentCoin contract address |
-| `LLM_PROVIDER` | No | `openai` | LLM provider: `openai`, `anthropic`, `ollama`, or `gemini` |
-| `LLM_API_KEY` | Conditional | -- | API key. Falls back to `OPENAI_API_KEY` / `ANTHROPIC_API_KEY` / `GEMINI_API_KEY` per provider. Not needed for `ollama` |
+| `LLM_PROVIDER` | No | `openai` | LLM provider: `openai`, `anthropic`, `ollama`, `gemini`, `claude-code`, or `codex` |
+| `LLM_API_KEY` | Conditional | -- | API key. Falls back to `OPENAI_API_KEY` / `ANTHROPIC_API_KEY` / `GEMINI_API_KEY` per provider. Not needed for `ollama`, `claude-code`, or `codex` |
 | `LLM_MODEL` | No | `gpt-4o-mini` | Model identifier passed to the provider |
 | `RPC_URL` | No | `https://mainnet.base.org` | Base JSON-RPC endpoint |
 | `CHAIN` | No | `base` | Network selector; auto-detects `baseSepolia` if RPC URL contains "sepolia" |
@@ -196,6 +198,8 @@ CHAIN=base
 | Anthropic | `claude-sonnet-4-5-20250929` | ~$0.005 | High accuracy on constrained generation |
 | Ollama | `llama3.1` | Free (local) | Requires local GPU; variable accuracy |
 | Gemini | `gemini-2.5-flash` | ~$0.001 | Fast, good accuracy |
+| Claude Code | `default` | Subscription | Use your existing Claude Code session — no API key needed |
+| Codex | `default` | Subscription | Use your existing Codex session — no API key needed |
 
 ### RPC Recommendations
 
@@ -368,6 +372,30 @@ Ollama runs on `http://127.0.0.1:11434` by default. The miner connects there aut
 
 **Trade-off:** Free inference, but local models may have lower accuracy on the constrained SMHL challenges. The miner retries up to 3 times per challenge, but persistent failures will slow mining.
 
+### Session Mining (Claude Code / Codex)
+
+Mine using your existing Claude Code or Codex subscription — no API key required:
+
+```bash
+# In your .env
+LLM_PROVIDER=claude-code
+# No LLM_API_KEY needed — the miner shells out to your local CLI
+```
+
+Or with Codex:
+```bash
+LLM_PROVIDER=codex
+```
+
+**How it works:** Instead of calling an LLM API, the miner executes `claude -p` or `codex exec` locally to solve SMHL challenges. This uses whatever model your CLI session defaults to.
+
+**Requirements:**
+- `claude` or `codex` CLI must be installed and authenticated
+- The CLI must be available in your PATH
+- Your subscription must be active
+
+**Trade-off:** Session-based solving may be slightly slower than direct API calls due to CLI startup overhead, but eliminates the need for separate API keys and billing. The 15-second timeout ensures challenges are still submitted within the contract's 20-second window.
+
 ### Custom RPC Endpoints
 
 Set `RPC_URL` in `.env` to any Base-compatible JSON-RPC endpoint. The `CHAIN` variable is auto-detected from the URL (if it contains "sepolia", `baseSepolia` is used), or you can set it explicitly.
@@ -417,6 +445,9 @@ Use the corresponding testnet contract addresses.
 | `SMHL solve failed after 3 attempts` | LLM cannot satisfy constraints | Switch to a more capable model (e.g., `gpt-4o` or `claude-sonnet-4-5-20250929`) |
 | `Fee forward failed` | LPVault rejected the ETH transfer | LPVault may not be set; check contract deployment |
 | `10 consecutive failures` | Repeated transient errors | Check RPC connectivity, wallet balance, and LLM availability |
+| `Claude Code error: ...` | `claude` CLI failed or timed out | Verify `claude` is installed and in PATH; check subscription is active |
+| `Codex error: ...` | `codex` CLI failed or timed out | Verify `codex` is installed and in PATH; check subscription is active |
+| `Timed out waiting for next block (60s)` | RPC not responding or network stalled | Check RPC connectivity; try a different RPC endpoint |
 
 ---
 

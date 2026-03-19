@@ -55,13 +55,15 @@ function formatBaseReward(era: bigint): string {
 }
 
 async function waitForNextBlock(lastMineBlock: bigint): Promise<void> {
-  while (true) {
+  const deadline = Date.now() + 60_000; // 60 seconds
+  while (Date.now() < deadline) {
     const currentBlock = await publicClient.getBlockNumber();
     if (currentBlock > lastMineBlock) {
       return;
     }
     await sleep(500);
   }
+  throw new Error("Timed out waiting for next block (60s)");
 }
 
 async function grindNonce(
@@ -263,7 +265,10 @@ export async function startMining(tokenId: bigint): Promise<void> {
         args: [grind.nonce, smhlSolution, tokenId],
       });
       txSpinner.update("Waiting for confirmation...");
-      await publicClient.waitForTransactionReceipt({ hash: txHash });
+      const receipt = await publicClient.waitForTransactionReceipt({ hash: txHash });
+      if (receipt.status === "reverted") {
+        throw new Error("Mine transaction reverted on-chain");
+      }
       txSpinner.stop("Submitting transaction... confirmed");
 
       // Fetch post-mine stats

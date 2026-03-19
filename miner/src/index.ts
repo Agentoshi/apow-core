@@ -143,11 +143,17 @@ async function setupWizard(): Promise<void> {
 
   // Step 3: LLM
   console.log(`  ${ui.bold("Step 3/3: LLM Provider")}`);
-  const providerInput = await ui.prompt("Provider (openai/anthropic/gemini/ollama)", "openai");
-  const provider = (["openai", "anthropic", "gemini", "ollama"].includes(providerInput) ? providerInput : "openai") as LlmProvider;
+  const providerInput = await ui.prompt("Provider (openai/anthropic/gemini/ollama/claude-code/codex)", "openai");
+  const provider = (["openai", "anthropic", "gemini", "ollama", "claude-code", "codex"].includes(providerInput) ? providerInput : "openai") as LlmProvider;
   values.LLM_PROVIDER = provider;
 
-  if (provider !== "ollama") {
+  if (provider === "ollama") {
+    const ollamaUrl = await ui.prompt("Ollama URL", "http://127.0.0.1:11434");
+    values.OLLAMA_URL = ollamaUrl;
+    ui.ok(`Ollama at ${ollamaUrl}`);
+  } else if (provider === "claude-code" || provider === "codex") {
+    ui.ok(`Using local ${provider} CLI — no API key needed`);
+  } else {
     const apiKey = await ui.promptSecret("API key");
     if (apiKey) {
       values.LLM_API_KEY = apiKey;
@@ -156,13 +162,9 @@ async function setupWizard(): Promise<void> {
       ui.fail("No API key provided");
       ui.hint(`Set LLM_API_KEY in .env later`);
     }
-  } else {
-    const ollamaUrl = await ui.prompt("Ollama URL", "http://127.0.0.1:11434");
-    values.OLLAMA_URL = ollamaUrl;
-    ui.ok(`Ollama at ${ollamaUrl}`);
   }
 
-  const defaultModel = provider === "gemini" ? "gemini-2.5-flash" : provider === "anthropic" ? "claude-sonnet-4-5-20250929" : "gpt-4o-mini";
+  const defaultModel = provider === "gemini" ? "gemini-2.5-flash" : provider === "anthropic" ? "claude-sonnet-4-5-20250929" : provider === "claude-code" || provider === "codex" ? "default" : "gpt-4o-mini";
   const model = await ui.prompt("Model", defaultModel);
   values.LLM_MODEL = model;
 
