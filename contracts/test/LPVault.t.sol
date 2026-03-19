@@ -119,6 +119,13 @@ contract MockUNCXLocker {
         lastFeeName = params.feeName;
         return 1;
     }
+
+    function increaseLiquidity(
+        uint256,
+        INonfungiblePositionManager.IncreaseLiquidityParams calldata params
+    ) external payable returns (uint128, uint256, uint256) {
+        return (uint128(params.amount0Desired), params.amount0Desired, params.amount1Desired);
+    }
 }
 
 contract MockUniswapV3Factory {

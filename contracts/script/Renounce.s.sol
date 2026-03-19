@@ -45,6 +45,11 @@ contract Renounce is Script {
         // because deployLP() requires onlyOwner and owner would be address(0)
         require(lpVault.lpDeployed(), "LP not deployed - renouncing would brick the protocol");
 
+        // Soft warning: stranded ETH that could be added to LP
+        if (lpVaultAddr.balance > 0.13 ether) {
+            console.log("WARNING: Vault has", lpVaultAddr.balance, "ETH - consider addLiquidity() first");
+        }
+
         console.log("All pointers verified. Renouncing ownership...");
 
         vm.startBroadcast(pk);

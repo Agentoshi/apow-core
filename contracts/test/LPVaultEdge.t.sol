@@ -112,6 +112,13 @@ contract MockUNCXLockerLP {
     uint256 public lastFeeReceived;
     string public lastFeeName;
 
+    // increaseLiquidity tracking
+    uint256 public lastIncreaseLockId;
+    uint256 public lastIncreaseTokenId;
+    uint256 public lastIncreaseAmount0;
+    uint256 public lastIncreaseAmount1;
+    uint256 public increaseCallCount;
+
     function lock(IUNCXLocker.LockParams calldata params) external payable returns (uint256) {
         lastLockedTokenId = params.nft_id;
         lastCollectAddress = params.collectAddress;
@@ -119,6 +126,26 @@ contract MockUNCXLockerLP {
         lastFeeReceived = msg.value;
         lastFeeName = params.feeName;
         return 1;
+    }
+
+    function increaseLiquidity(
+        uint256 lockId,
+        INonfungiblePositionManager.IncreaseLiquidityParams calldata params
+    ) external payable returns (uint128, uint256, uint256) {
+        lastIncreaseLockId = lockId;
+        lastIncreaseTokenId = params.tokenId;
+        lastIncreaseAmount0 = params.amount0Desired;
+        lastIncreaseAmount1 = params.amount1Desired;
+        increaseCallCount++;
+
+        // Pull tokens from caller (UNCX pulls from msg.sender)
+        MockTokenLP token0;
+        MockTokenLP token1;
+        if (address(uint160(uint256(keccak256("agentCoin")))) < 0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913) {
+            // Dynamic: just pull whatever amounts were approved
+        }
+        // For simplicity, just record — real UNCX would pull tokens
+        return (uint128(params.amount0Desired), params.amount0Desired, params.amount1Desired);
     }
 }
 
@@ -377,5 +404,106 @@ contract LPVaultEdgeTest is Test {
     function testReceive_ZeroValue() public {
         (bool success,) = address(lpVault).call{value: 0}("");
         assertTrue(success);
+    }
+
+    // ============ addLiquidity ============
+
+    function _deployLPFirst() internal {
+        agentCoin.mint(address(lpVault), 2_100_000e18);
+        vm.deal(address(lpVault), 5 ether);
+        vm.prank(deployer);
+        lpVault.deployLP(0);
+    }
+
+    function testAddLiquidity_HappyPath() public {
+        _deployLPFirst();
+
+        // Send more ETH to vault (simulating post-deployment mint fees)
+        vm.deal(address(lpVault), 1 ether);
+
+        vm.prank(deployer);
+        lpVault.addLiquidity(0, 0);
+
+        // Verify UNCX increaseLiquidity was called
+        MockUNCXLockerLP locker = MockUNCXLockerLP(UNCX_V3_LOCKER);
+        assertEq(locker.increaseCallCount(), 1);
+        assertEq(locker.lastIncreaseLockId(), 1); // lockId returned by mock
+        assertEq(locker.lastIncreaseTokenId(), lpVault.positionTokenId());
+
+        // Vault should have no remaining ETH
+        assertEq(address(lpVault).balance, 0);
+    }
+
+    function testAddLiquidity_BeforeDeployLP_Reverts() public {
+        vm.deal(address(lpVault), 1 ether);
+
+        vm.prank(deployer);
+        vm.expectRevert("LP not deployed");
+        lpVault.addLiquidity(0, 0);
+    }
+
+    function testAddLiquidity_BelowThreshold_Reverts() public {
+        _deployLPFirst();
+
+        // Send less than ADD_LIQUIDITY_THRESHOLD
+        vm.deal(address(lpVault), 0.09 ether);
+
+        vm.prank(deployer);
+        vm.expectRevert("Below threshold");
+        lpVault.addLiquidity(0, 0);
+    }
+
+    function testAddLiquidity_OnlyOwner() public {
+        _deployLPFirst();
+        vm.deal(address(lpVault), 1 ether);
+
+        vm.prank(other);
+        vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, other));
+        lpVault.addLiquidity(0, 0);
+    }
+
+    function testAddLiquidity_MultipleCalls() public {
+        _deployLPFirst();
+
+        // First call
+        vm.deal(address(lpVault), 0.5 ether);
+        vm.prank(deployer);
+        lpVault.addLiquidity(0, 0);
+
+        // Second call
+        vm.deal(address(lpVault), 0.3 ether);
+        vm.prank(deployer);
+        lpVault.addLiquidity(0, 0);
+
+        MockUNCXLockerLP locker = MockUNCXLockerLP(UNCX_V3_LOCKER);
+        assertEq(locker.increaseCallCount(), 2);
+    }
+
+    function testAddLiquidity_ExactThreshold() public {
+        _deployLPFirst();
+
+        vm.deal(address(lpVault), 0.1 ether); // Exact threshold
+        vm.prank(deployer);
+        lpVault.addLiquidity(0, 0);
+
+        MockUNCXLockerLP locker = MockUNCXLockerLP(UNCX_V3_LOCKER);
+        assertEq(locker.increaseCallCount(), 1);
+    }
+
+    function testAddLiquidity_EmitsEvent() public {
+        _deployLPFirst();
+        vm.deal(address(lpVault), 1 ether);
+
+        vm.prank(deployer);
+        vm.expectEmit(false, false, false, false);
+        emit LPVault.LiquidityAdded(0, 0); // We don't check exact values (mock 1:1 swap)
+        lpVault.addLiquidity(0, 0);
+    }
+
+    function testAddLiquidity_StoresLockId() public {
+        _deployLPFirst();
+
+        // After deployLP, uncxLockId should be set
+        assertEq(lpVault.uncxLockId(), 1); // Mock returns 1
     }
 }

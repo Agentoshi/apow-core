@@ -51,6 +51,15 @@ interface INonfungiblePositionManager {
         payable
         returns (address pool);
 
+    struct IncreaseLiquidityParams {
+        uint256 tokenId;
+        uint256 amount0Desired;
+        uint256 amount1Desired;
+        uint256 amount0Min;
+        uint256 amount1Min;
+        uint256 deadline;
+    }
+
     function approve(address to, uint256 tokenId) external;
 }
 
@@ -74,6 +83,11 @@ interface IUNCXLocker {
     }
 
     function lock(LockParams calldata params) external payable returns (uint256 lockId);
+
+    function increaseLiquidity(
+        uint256 lockId,
+        INonfungiblePositionManager.IncreaseLiquidityParams calldata params
+    ) external payable returns (uint128 liquidity, uint256 amount0, uint256 amount1);
 }
 
 contract LPVault is Ownable, ReentrancyGuard {
@@ -85,6 +99,7 @@ contract LPVault is Ownable, ReentrancyGuard {
     address public constant UNISWAP_V3_FACTORY = 0x33128a8fC17869897dcE68Ed026d694621f6FDfD;
 
     uint256 public constant LP_DEPLOY_THRESHOLD = 4.9 ether;
+    uint256 public constant ADD_LIQUIDITY_THRESHOLD = 0.1 ether;
     uint256 public constant UNCX_FLAT_FEE = 0.03 ether;
     uint24 public constant FEE_TIER = 3000;
     uint256 public constant ETERNAL_LOCK = type(uint256).max;
@@ -92,11 +107,13 @@ contract LPVault is Ownable, ReentrancyGuard {
     int24 internal constant MAX_TICK = 887220;
 
     event LPDeployed(uint256 positionTokenId, uint256 agentAmount, uint256 usdcAmount);
+    event LiquidityAdded(uint256 agentAmount, uint256 usdcAmount);
     event AgentCoinSet(address agentCoin);
 
     IAgentCoin public agentCoin;
     bool public lpDeployed;
     uint256 public positionTokenId;
+    uint256 public uncxLockId;
     address public deployer;
 
     constructor(address _deployer) Ownable(msg.sender) {
@@ -181,6 +198,52 @@ contract LPVault is Ownable, ReentrancyGuard {
         emit LPDeployed(tokenId, agentAmount, usdcAmount);
     }
 
+    /// @notice Add accumulated ETH to the existing UNCX-locked LP position
+    /// @param minUsdcOut Minimum USDC from WETH→USDC swap (slippage protection)
+    /// @param minAgentOut Minimum AGENT from USDC→AGENT swap (slippage protection)
+    function addLiquidity(uint256 minUsdcOut, uint256 minAgentOut) external onlyOwner nonReentrant {
+        require(lpDeployed, "LP not deployed");
+        require(address(this).balance >= ADD_LIQUIDITY_THRESHOLD, "Below threshold");
+
+        // 1. Wrap ALL ETH → WETH (no UNCX fee needed for increaseLiquidity)
+        IWETH(WETH).deposit{value: address(this).balance}();
+
+        // 2. Swap ALL WETH → USDC
+        uint256 wethBalance = IERC20(WETH).balanceOf(address(this));
+        uint256 totalUsdc = _swapWethToUsdc(wethBalance, minUsdcOut);
+
+        // 3. Swap HALF USDC → AGENT (buying from our pool)
+        uint256 usdcForAgent = totalUsdc / 2;
+        uint256 usdcForLP = totalUsdc - usdcForAgent;
+        uint256 agentAmount = _swapUsdcToAgent(usdcForAgent, minAgentOut);
+
+        require(agentAmount > 0, "No AGENT");
+        require(usdcForLP > 0, "No USDC");
+
+        // 4. Order tokens for Uniswap V3
+        (,, uint256 amount0Desired, uint256 amount1Desired) =
+            _orderedPositionAmounts(agentAmount, usdcForLP);
+
+        // 5. Approve tokens to UNCX locker (it pulls from msg.sender)
+        _approveToken(IERC20(address(agentCoin)), UNCX_V3_LOCKER, agentAmount);
+        _approveToken(IERC20(USDC), UNCX_V3_LOCKER, usdcForLP);
+
+        // 6. Increase liquidity on the existing locked position
+        INonfungiblePositionManager.IncreaseLiquidityParams memory params =
+            INonfungiblePositionManager.IncreaseLiquidityParams({
+                tokenId: positionTokenId,
+                amount0Desired: amount0Desired,
+                amount1Desired: amount1Desired,
+                amount0Min: amount0Desired * 90 / 100,
+                amount1Min: amount1Desired * 90 / 100,
+                deadline: block.timestamp
+            });
+
+        IUNCXLocker(UNCX_V3_LOCKER).increaseLiquidity(uncxLockId, params);
+
+        emit LiquidityAdded(agentAmount, usdcForLP);
+    }
+
     /// @notice Recover WETH if deployLP() partially fails (e.g., swap succeeds but pool creation fails)
     /// @dev Only callable by owner before LP is deployed
     function emergencyUnwrapWeth() external onlyOwner {
@@ -199,6 +262,24 @@ contract LPVault is Ownable, ReentrancyGuard {
         ISwapRouter.ExactInputSingleParams memory params = ISwapRouter.ExactInputSingleParams({
             tokenIn: WETH,
             tokenOut: USDC,
+            fee: FEE_TIER,
+            recipient: address(this),
+            amountIn: amountIn,
+            amountOutMinimum: amountOutMinimum,
+            sqrtPriceLimitX96: 0
+        });
+
+        amountOut = ISwapRouter(SWAP_ROUTER).exactInputSingle(params);
+    }
+
+    function _swapUsdcToAgent(uint256 amountIn, uint256 amountOutMinimum) internal returns (uint256 amountOut) {
+        require(amountIn > 0, "No USDC");
+
+        _approveToken(IERC20(USDC), SWAP_ROUTER, amountIn);
+
+        ISwapRouter.ExactInputSingleParams memory params = ISwapRouter.ExactInputSingleParams({
+            tokenIn: USDC,
+            tokenOut: address(agentCoin),
             fee: FEE_TIER,
             recipient: address(this),
             amountIn: amountIn,
@@ -242,7 +323,7 @@ contract LPVault is Ownable, ReentrancyGuard {
             r: r
         });
 
-        IUNCXLocker(UNCX_V3_LOCKER).lock{value: UNCX_FLAT_FEE}(params);
+        uncxLockId = IUNCXLocker(UNCX_V3_LOCKER).lock{value: UNCX_FLAT_FEE}(params);
     }
 
     function _approveToken(IERC20 token, address spender, uint256 amount) internal {

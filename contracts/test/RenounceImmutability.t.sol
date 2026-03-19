@@ -116,6 +116,13 @@ contract MockUNCXLocker {
         lastFeeName = params.feeName;
         return 1;
     }
+
+    function increaseLiquidity(
+        uint256,
+        INonfungiblePositionManager.IncreaseLiquidityParams calldata params
+    ) external payable returns (uint128, uint256, uint256) {
+        return (uint128(params.amount0Desired), params.amount0Desired, params.amount1Desired);
+    }
 }
 
 contract MockUniswapV3Factory {
@@ -385,6 +392,12 @@ contract RenounceImmutabilityTest is Test {
         vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, deployer));
         lpVault.setAgentCoin(address(1));
 
+        // addLiquidity reverts
+        vm.deal(address(lpVault), 1 ether);
+        vm.prank(deployer);
+        vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, deployer));
+        lpVault.addLiquidity(0, 0);
+
         // Also verify a random address can't call them either
         address rando = makeAddr("rando");
 
@@ -460,7 +473,23 @@ contract RenounceImmutabilityTest is Test {
         assertFalse(lpVault.lpDeployed());
     }
 
-    // ============ Test 5: Deployer Retains Fee Collection Rights ============
+    // ============ Test 5b: addLiquidity Reverts After Renounce ============
+
+    function testPostRenounce_AddLiquidity_Reverts() public {
+        // Setup: deploy LP and renounce
+        _deployLP();
+        _renounceAll();
+
+        // Fund vault with ETH
+        vm.deal(address(lpVault), 1 ether);
+
+        // addLiquidity should revert — owner is address(0)
+        vm.prank(deployer);
+        vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, deployer));
+        lpVault.addLiquidity(0, 0);
+    }
+
+    // ============ Test 6: Deployer Retains Fee Collection Rights ============
 
     function testPostRenounce_DeployerRetainsFeeCollectionRights() public {
         // Setup: deploy LP and renounce

@@ -188,6 +188,36 @@ contract LPVaultForkTest is Test {
         assertEq(ac.balanceOf(deployer), 1);
     }
 
+    function testFork_AddLiquidity_RealUniswapV3() public onlyFork {
+        // 1. Deploy LP first
+        vm.deal(address(lpVault), 5 ether);
+        vm.prank(deployer);
+        lpVault.deployLP(0);
+        assertTrue(lpVault.lpDeployed());
+        assertTrue(lpVault.uncxLockId() > 0, "uncxLockId should be set");
+
+        uint256 posTokenId = lpVault.positionTokenId();
+        assertTrue(posTokenId > 0);
+
+        // 2. Send more ETH to vault (simulating post-deployment mint fees)
+        vm.deal(address(lpVault), 0.5 ether);
+
+        // 3. Add liquidity
+        vm.prank(deployer);
+        lpVault.addLiquidity(0, 0);
+
+        // 4. Verify vault is drained
+        assertEq(address(lpVault).balance, 0);
+
+        // 5. Verify no stranded WETH
+        assertEq(IERC20(WETH).balanceOf(address(lpVault)), 0);
+
+        // 6. Position token ID unchanged (same position, just deeper)
+        assertEq(lpVault.positionTokenId(), posTokenId);
+
+        console.log("AddLiquidity succeeded on fork");
+    }
+
     function testFork_EmergencyUnwrapWeth() public onlyFork {
         vm.deal(address(lpVault), 5 ether);
 

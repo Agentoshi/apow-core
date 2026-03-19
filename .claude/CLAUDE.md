@@ -13,7 +13,7 @@ agentcoin/
 │   │   ├── LPVault.sol           # ETH accumulator → Uniswap V3 LP → UNCX eternal lock
 │   │   ├── lib/MinerArt.sol      # On-chain 16x16 pixel art SVG generation
 │   │   └── interfaces/           # IAgentCoin.sol, IMiningAgent.sol
-│   ├── test/                     # 221 tests (218 unit + 5 integration + 8 fork)
+│   ├── test/                     # 231 tests across 12 suites (unit, edge, integration, simulation, security, fork)
 │   │   ├── AgentCoin.t.sol
 │   │   ├── MiningAgent.t.sol
 │   │   ├── LPVault.t.sol
@@ -24,6 +24,7 @@ agentcoin/
 │   ├── script/
 │   │   ├── Deploy.s.sol          # Step 1: Deploy + cross-wire all 3 contracts
 │   │   ├── DeployLP.s.sol        # Step 6: Quote swap + deploy LP + UNCX lock
+│   │   ├── AddLiquidity.s.sol    # Step 7b: Add accumulated ETH to UNCX position
 │   │   └── Renounce.s.sol        # Step 8: Renounce ownership (IRREVERSIBLE)
 │   ├── foundry.toml              # solc 0.8.26, optimizer 200 runs, via_ir, cancun
 │   └── lib/                      # forge-std, openzeppelin-contracts
@@ -67,8 +68,8 @@ cd miner && npm run build
 
 ## Current State
 
-- **Contracts:** Code-complete. 221/221 tests passing. SMHL retuned to tolerant verification (length ±5, words ±2, char anywhere). Deployed to Base Sepolia — 9 on-chain mines verified across 12 LLM providers.
-- **Fork tests:** 8 tests verifying real Uniswap V3 + UNCX integration on Base mainnet.
+- **Contracts:** Code-complete. 231/231 tests passing. SMHL retuned to tolerant verification (length ±5, words ±2, char anywhere). Deployed to Base Sepolia — 9 on-chain mines verified across 12 LLM providers.
+- **Fork tests:** 9 tests verifying real Uniswap V3 + UNCX integration on Base mainnet.
 - **Miner client:** Functional but pre-release (private:true, no unit tests, no npm publish).
 - **Deployment:** NOT deployed. Pre-deploy hardening phase. Deploy only on explicit user command.
 
@@ -76,7 +77,7 @@ cd miner && npm run build
 
 1. **NEVER deploy without explicit user command.** Deploy scripts are irreversible. The orchestrator must confirm project name + target before executing any forge script.
 
-2. **NEVER modify `contracts/src/` without running the full test suite.** Always run `forge test` after any contract change. All tests must pass (currently 221).
+2. **NEVER modify `contracts/src/` without running the full test suite.** Always run `forge test` after any contract change. All tests must pass (currently 231).
 
 3. **Fork tests require `--fork-url`.** Without it, the `onlyFork` modifier causes tests to silently skip (returning ~3000 gas instead of real execution). Always verify gas costs are in the hundreds of thousands.
 
@@ -98,6 +99,7 @@ cd miner && npm run build
 | Base reward | 3 AGENT/mine | Decays 10% per 500k mines |
 | NFT supply | 10,000 | MiningAgent cap |
 | LP threshold | 4.9 ETH | Plus 0.03 ETH UNCX fee = 4.93 ETH minimum |
+| Add liquidity threshold | 0.1 ETH | Minimum for addLiquidity() — below this, gas exceeds value |
 | Fee tier | 0.3% (3000) | Uniswap V3 |
 | UNCX lock | Eternal | type(uint256).max |
 | Difficulty adjustment | Every 64 mines | Targets 1 mine per 5 Base blocks |

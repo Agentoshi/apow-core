@@ -55,9 +55,9 @@ LP_VAULT_ADDRESS=
 # REQUIRED FOR STEPS 3-4 (Smoke Tests via Miner CLI)
 # ──────────────────────────────────────────────
 
-# Miner client uses different env var names
-MINER_PRIVATE_KEY=<same-as-PRIVATE_KEY-for-smoke-test>
-MINER_RPC_URL=https://mainnet.base.org
+# Miner client uses the same env vars
+PRIVATE_KEY=<deployer-private-key>
+RPC_URL=https://mainnet.base.org
 
 # LLM for SMHL challenge solving
 LLM_PROVIDER=openai
@@ -128,6 +128,7 @@ MiningAgent (ERC-721 + ERC-8004 miner NFTs, 10k supply)
 | 5 | Fund LP vault | Vault balance >= 4.93 ETH | No (ETH locked) |
 | 6 | Deploy liquidity pool | LP created, UNCX locked, transfers unlocked | No |
 | 7 | Verify LP deployment | Uniswap pool visible, UNCX eternal lock confirmed | N/A |
+| 7b | Add liquidity (optional) | Accumulated ETH added to existing UNCX position | No |
 | **8** | **RENOUNCE OWNERSHIP** | **All owners == address(0). POINT OF NO RETURN.** | **NO** |
 | 9 | Verify immutability | All admin functions permanently revert | N/A |
 | 10 | Publish and announce | Addresses discoverable, miner defaults updated | N/A |
@@ -251,7 +252,7 @@ forge verify-contract $LP_VAULT_ADDRESS LPVault \
 
 ```bash
 cd miner
-npx ts-node src/index.ts mint
+npx tsx src/index.ts mint
 # OR if built: node dist/index.js mint
 ```
 
@@ -291,7 +292,7 @@ Mint must succeed before proceeding. If it fails:
 
 ```bash
 cd miner
-npx ts-node src/index.ts mine 1
+npx tsx src/index.ts mine 1
 # OR: node dist/index.js mine 1
 ```
 
@@ -422,6 +423,34 @@ cast balance $LP_VAULT_ADDRESS --rpc-url $BASE_RPC
 
 ---
 
+### Step 7b — Add Liquidity (Optional, Repeatable)
+
+If mint fees have accumulated ETH in the vault after LP deployment, add it to the existing UNCX-locked position:
+
+```bash
+cd contracts
+source ../.env
+forge script script/AddLiquidity.s.sol \
+  --rpc-url $BASE_RPC \
+  --broadcast
+```
+
+**What this script does:**
+1. Pre-flight checks: chain ID, vault ownership, LP deployed, balance >= 0.1 ETH
+2. Quotes WETH→USDC and USDC→AGENT via QuoterV2
+3. Applies **3% slippage tolerance** on both swaps
+4. Calls `lpVault.addLiquidity(minUsdcOut, minAgentOut)` which:
+   a. Wraps ALL vault ETH to WETH (no UNCX fee — `increaseLiquidity` is free)
+   b. Swaps ALL WETH → USDC
+   c. Swaps HALF USDC → AGENT (buying from our pool)
+   d. Increases liquidity on the existing UNCX-locked position
+
+**This is callable multiple times.** Run it whenever the vault has accumulated >= 0.1 ETH from ongoing mint fees. Each call deepens the existing LP position.
+
+**Required env vars:** `PRIVATE_KEY`, `LP_VAULT_ADDRESS`
+
+---
+
 ### ══════ STOP AND VERIFY ══════
 
 **This is the last checkpoint before the point of no return.**
@@ -527,6 +556,10 @@ cast send $LP_VAULT_ADDRESS "emergencyUnwrapWeth()" \
 # Expected: OwnableUnauthorizedAccount revert
 
 cast send $LP_VAULT_ADDRESS "deployLP(uint256)" 0 \
+  --rpc-url $BASE_RPC --private-key $PRIVATE_KEY 2>&1 | grep -i "revert\|error"
+# Expected: OwnableUnauthorizedAccount revert
+
+cast send $LP_VAULT_ADDRESS "addLiquidity(uint256,uint256)" 0 0 \
   --rpc-url $BASE_RPC --private-key $PRIVATE_KEY 2>&1 | grep -i "revert\|error"
 # Expected: OwnableUnauthorizedAccount revert
 

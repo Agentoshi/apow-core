@@ -14,7 +14,7 @@ MiningAgent (ERC-8004)             AgentCoin (ERC-20)        LPVault
 
 **AgentCoin** — The mineable token following [ERC-918](https://eips.ethereum.org/EIPS/eip-918) (Mineable Token) concepts. Agents submit dual proof: an SMHL solution demonstrating language capability + a SHA-3 nonce producing a hash below the current difficulty target. Miners must own a MiningAgent NFT to mine. One mine per Base block. Difficulty auto-adjusts every 64 mines, targeting 1 mine per 5 blocks (~10s). Rewards decay 10% every 500,000 mines across eras, mirroring Bitcoin's halving schedule.
 
-**LPVault** — Accumulates ETH from NFT mint fees. When threshold is reached (4.93 ETH), swaps all ETH to USDC and deploys a full-range AGENT/USDC Uniswap V3 position locked forever via UNCX eternal lock. Deployer retains trading fee collection rights but liquidity can never be pulled.
+**LPVault** — Accumulates ETH from NFT mint fees. When threshold is reached (4.93 ETH), swaps all ETH to USDC and deploys a full-range AGENT/USDC Uniswap V3 position locked forever via UNCX eternal lock. Post-deployment, accumulated ETH from ongoing mint fees can be added to the existing locked position via `addLiquidity()` (callable multiple times before ownership renunciation). Deployer retains trading fee collection rights but liquidity can never be pulled.
 
 ## Agent Identity (ERC-8004)
 
@@ -87,7 +87,7 @@ contracts/
     LPVault.sol            LP accumulation + Uniswap V3 + UNCX eternal lock
     interfaces/            IAgentCoin, IMiningAgent
     lib/MinerArt.sol       On-chain generative pixel art
-  test/                    218 tests (unit, edge, integration, simulation, fork)
+  test/                    231 tests (unit, edge, integration, simulation, fork)
   script/                  Foundry deploy scripts
 miner/
   src/                     TypeScript mining client
@@ -99,7 +99,7 @@ miner/
 # Install dependencies
 cd contracts && forge install
 
-# Run tests (218 tests)
+# Run tests (231 tests)
 forge test
 
 # Run fork tests against Base mainnet
@@ -122,15 +122,15 @@ cp ../.env.example .env  # fill in contract addresses + keys
 
 | Command | Description |
 |---------|-------------|
-| `npx ts-node src/miner.ts setup` | Check wallet balance, contract connectivity, NFT ownership |
-| `npx ts-node src/miner.ts mint` | Mint a MiningAgent NFT (solves SMHL challenge) |
-| `npx ts-node src/miner.ts mine <tokenId>` | Mine $AGENT with your NFT (SMHL + PoW loop) |
-| `npx ts-node src/miner.ts stats [tokenId]` | View mining stats, earnings, difficulty |
+| `npx tsx src/index.ts setup` | Check wallet balance, contract connectivity, NFT ownership |
+| `npx tsx src/index.ts mint` | Mint a MiningAgent NFT (solves SMHL challenge) |
+| `npx tsx src/index.ts mine <tokenId>` | Mine $AGENT with your NFT (SMHL + PoW loop) |
+| `npx tsx src/index.ts stats [tokenId]` | View mining stats, earnings, difficulty |
 
 **Configuration** (`.env`):
 
-- `MINER_PRIVATE_KEY` — EOA private key for mining transactions
-- `MINER_RPC_URL` — Base RPC endpoint
+- `PRIVATE_KEY` — EOA private key for mining transactions
+- `RPC_URL` — Base RPC endpoint
 - `MINING_AGENT_ADDRESS` / `AGENT_COIN_ADDRESS` — deployed contract addresses
 - `LLM_PROVIDER` — `openai`, `anthropic`, or `ollama`
 - `LLM_MODEL` — model name (e.g. `gpt-4o-mini`, `claude-sonnet-4-5-20250929`)
@@ -151,6 +151,7 @@ PRIVATE_KEY=$PK forge script script/Deploy.s.sol --rpc-url $BASE_RPC --broadcast
 5. `miningAgent.setAgentCoin(agentCoin)`
 6. `lpVault.setAgentCoin(agentCoin)`
 7. Verify system works (see checklist below)
+7b. (Optional) Add liquidity: `forge script script/AddLiquidity.s.sol --rpc-url $BASE_RPC --broadcast`
 8. Renounce ownership: `forge script script/Renounce.s.sol --rpc-url $BASE_RPC --broadcast`
 
 ### Post-Deploy Verification Checklist

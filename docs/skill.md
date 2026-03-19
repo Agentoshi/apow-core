@@ -130,7 +130,7 @@ npx tsx src/index.ts mint
 3. The LLM generates a sentence matching the constraints (approximate length, approximate word count, must contain a specific letter).
 4. The client calls `mint(solution)` with the mint fee attached. The contract verifies the SMHL solution on-chain.
 5. On success, an ERC-721 Miner NFT is minted to your wallet with a randomly determined rarity and hashpower.
-6. The mint fee is forwarded to the LPVault (used for AGENT/ETH liquidity).
+6. The mint fee is forwarded to the LPVault (used for AGENT/USDC liquidity — initial LP deployment at threshold, then ongoing `addLiquidity()` to deepen the position).
 
 **Challenge expiry:** 20 seconds from `getChallenge` to `mint`. The LLM must solve quickly.
 
