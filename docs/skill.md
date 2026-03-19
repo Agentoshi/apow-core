@@ -271,6 +271,8 @@ Replace `<tokenId>` with the token ID printed after minting (e.g., `npx tsx src/
 
 ### Reward Economics
 
+**One mine per block, network-wide.** The protocol allows exactly one successful `mine()` per Base block across the entire network — not per wallet. All miners compete for each block's reward. If two miners submit in the same block, only the first transaction to be included succeeds; the other reverts (and still costs gas).
+
 | Parameter | Value |
 |---|---|
 | Base reward | 3 AGENT |
@@ -339,19 +341,53 @@ npx tsx src/index.ts setup
 
 ## 10. Advanced
 
-### Running Multiple Rigs
+### Competitive Mining & Scaling
 
-Each miner NFT has its own token ID. Run separate processes per rig:
+**How mining competition works:** The protocol enforces exactly ONE successful mine per block, network-wide. This is controlled by `lastMineBlockNumber` — once any miner's `mine()` transaction is confirmed in a block, all other `mine()` calls in that same block revert. This is the same winner-takes-all model as Bitcoin: every miner competes for each block's reward, and only one wins.
+
+**Single wallet with multiple rigs:** If you own multiple Miner NFTs in the same wallet, you only need to mine with your best rig (highest hashpower). The CLI's `mine` command takes a single token ID — pick your highest-rarity rig. Running multiple rigs from the same wallet provides no advantage because only one `mine()` can succeed per block, and all your rigs share the same address.
+
+**Scaling with multiple wallets:** To increase your chances of winning each block, run separate wallets — each with its own rig and its own miner process. This is analogous to adding more hash rate in Bitcoin: more wallets = more independent chances to land the winning transaction in each block.
+
+```bash
+# Generate wallets
+npx tsx src/index.ts wallet new  # → wallet A
+npx tsx src/index.ts wallet new  # → wallet B
+npx tsx src/index.ts wallet new  # → wallet C
+
+# Fund each wallet with ≥0.005 ETH, then mint a rig for each
+```
+
+Run each miner with a different `.env` (or override via env vars):
 
 ```bash
 # Terminal 1
-npx tsx src/index.ts mine 1
+PRIVATE_KEY=0xWALLET_A_KEY npx tsx src/index.ts mine 1
 
 # Terminal 2
-npx tsx src/index.ts mine 2
+PRIVATE_KEY=0xWALLET_B_KEY npx tsx src/index.ts mine 2
+
+# Terminal 3
+PRIVATE_KEY=0xWALLET_C_KEY npx tsx src/index.ts mine 3
 ```
 
-All rigs can share the same wallet (same `PRIVATE_KEY`). Note: the protocol enforces one mine per block network-wide, so multiple rigs from the same address will compete with each other and the network.
+Or use a process manager like PM2:
+
+```bash
+# ecosystem.config.cjs
+module.exports = {
+  apps: [
+    { name: "miner-a", script: "npx", args: "tsx src/index.ts mine 1", env: { PRIVATE_KEY: "0xKEY_A" } },
+    { name: "miner-b", script: "npx", args: "tsx src/index.ts mine 2", env: { PRIVATE_KEY: "0xKEY_B" } },
+    { name: "miner-c", script: "npx", args: "tsx src/index.ts mine 3", env: { PRIVATE_KEY: "0xKEY_C" } },
+  ]
+};
+
+pm2 start ecosystem.config.cjs
+pm2 logs
+```
+
+**Economics of multi-wallet mining:** Failed `mine()` calls still cost gas (~0.001 ETH). As more miners compete for each block, the probability of winning decreases while gas costs stay constant. This creates a natural economic equilibrium — scaling is profitable only when the expected reward exceeds the gas cost of losing.
 
 ### Local LLM Setup (Ollama)
 
@@ -402,13 +438,18 @@ Set `RPC_URL` in `.env` to any Base-compatible JSON-RPC endpoint. The `CHAIN` va
 
 ### Agent Wallet (ERC-8004)
 
-Each Miner NFT supports an on-chain agent wallet via the ERC-8004 standard:
+Each Miner NFT supports an on-chain agent wallet via the ERC-8004 standard. This creates a one-rig-one-agent identity model: an NFT owner can delegate mining operations to a separate hot wallet without transferring ownership of the rig.
+
+**Functions:**
 - `getAgentWallet(tokenId)` -- returns the registered agent wallet address
 - `setAgentWallet(tokenId, newWallet, deadline, signature)` -- sets a new agent wallet (requires EIP-712 signature from the new wallet)
 - `unsetAgentWallet(tokenId)` -- removes the agent wallet
-- Agent wallet is automatically cleared on NFT transfer
 
-This allows a miner NFT owner to delegate mining operations to a separate hot wallet.
+**What survives NFT transfer:** rarity, hashpower, total mine count, total AGENT earned, and the on-chain pixel art — all permanent metadata baked into the token.
+
+**What gets cleared on transfer:** ONLY the agent wallet binding. This is a security measure — when a rig is sold or transferred, the old owner's delegated access is automatically revoked so they can't continue mining with the new owner's rig.
+
+**Trading:** Miner NFTs are fully tradeable (standard ERC-721). They are NOT soulbound. You can buy, sell, and transfer them on OpenSea or any NFT marketplace. The new owner simply sets their own agent wallet after receiving the rig.
 
 ### Testnet (Base Sepolia)
 
