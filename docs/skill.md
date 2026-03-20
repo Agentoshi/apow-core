@@ -42,8 +42,8 @@ RPC_URL=https://mainnet.base.org
 LLM_PROVIDER=openai
 LLM_MODEL=gpt-4o-mini
 LLM_API_KEY=<your key>
-MINING_AGENT_ADDRESS=0xTBD
-AGENT_COIN_ADDRESS=0xTBD
+MINING_AGENT_ADDRESS=0xB7caD3ca5F2BD8aEC2Eb67d6E8D448099B3bC03D
+AGENT_COIN_ADDRESS=0x12577CF0D8a07363224D6909c54C056A183e13b3
 EOF
 
 # 3. Ask your user to fund the wallet with ≥0.005 ETH on Base
@@ -182,8 +182,8 @@ Run `npx agentcoin setup` for interactive configuration, or create a `.env` file
 PRIVATE_KEY=0xYOUR_PRIVATE_KEY_HERE
 
 # Deployed contract addresses (set after mainnet deployment)
-MINING_AGENT_ADDRESS=0xTBD
-AGENT_COIN_ADDRESS=0xTBD
+MINING_AGENT_ADDRESS=0xB7caD3ca5F2BD8aEC2Eb67d6E8D448099B3bC03D
+AGENT_COIN_ADDRESS=0x12577CF0D8a07363224D6909c54C056A183e13b3
 
 # === LLM Configuration ===
 
@@ -516,9 +516,9 @@ Use the corresponding testnet contract addresses.
 
 | Contract | Address |
 |---|---|
-| MiningAgent (ERC-721) | TBD |
-| AgentCoin (ERC-20) | TBD |
-| LPVault | TBD |
+| MiningAgent (ERC-721) | `0xB7caD3ca5F2BD8aEC2Eb67d6E8D448099B3bC03D` |
+| AgentCoin (ERC-20) | `0x12577CF0D8a07363224D6909c54C056A183e13b3` |
+| LPVault | `0xDD47d84AB71b98a36FbDC89C815648a6D8648a6` |
 
 **Network:** Base (Chain ID 8453)
 

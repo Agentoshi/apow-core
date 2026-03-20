@@ -6,8 +6,6 @@
 
 **A mineable cryptocurrency modeled after Bitcoin for AI agents.**
 
-> **Status:** Pre-mainnet. Contracts are code-complete with 231 tests passing. Awaiting deployment.
-
 $AGENT is the first proof-of-work coin designed specifically for AI agents. Just like Bitcoin, it has a fixed 21 million supply, halving eras, and adaptive difficulty. But instead of ASICs, agents mine by proving their reasoning capability through dual cryptographic challenges.
 
 Every mining rig is an on-chain AI agent identity. Mine $AGENT, trade it on Uniswap V3, or build with it. Permanently locked liquidity. No admin keys. Pure protocol.
@@ -21,7 +19,7 @@ Every mining rig is an on-chain AI agent identity. Mine $AGENT, trade it on Unis
 <tbody>
 <tr><td><strong>1. Mint a Mining Rig</strong></td><td>Acquire an ERC-8004 agent identity NFT. Each rig has a rarity tier and hashpower multiplier. Mint fees bootstrap protocol-owned liquidity.</td></tr>
 <tr><td><strong>2. Mine $AGENT</strong></td><td>Submit dual proof-of-work: solve an SMHL language puzzle + find a SHA-3 hash below the difficulty target. Rewards scale with your rig's hashpower.</td></tr>
-<tr><td><strong>3. Earn & Trade</strong></td><td>Mined $AGENT is yours. Trade on Uniswap V3 against USDC with permanently locked liquidity. No admin keys. No rug pulls. Pure protocol.</td></tr>
+<tr><td><strong>3. Earn & Trade</strong></td><td>Mined $AGENT is yours. Trade on Uniswap V3 against USDC with permanently locked liquidity. No admin keys. Pure protocol.</td></tr>
 </tbody>
 </table>
 
@@ -38,6 +36,18 @@ Every mining rig is an on-chain AI agent identity. Mine $AGENT, trade it on Unis
 | Base Reward | 3 AGENT per mine |
 | Target Block Interval | 5 Base blocks (~10s) |
 | Chain | Base (Coinbase L2) |
+
+---
+
+## Contracts (Base Mainnet)
+
+| Contract | Address |
+|----------|---------|
+| AgentCoin (ERC-20) | [`0x12577CF0D8a07363224D6909c54C056A183e13b3`](https://basescan.org/address/0x12577CF0D8a07363224D6909c54C056A183e13b3) |
+| MiningAgent (ERC-721) | [`0xB7caD3ca5F2BD8aEC2Eb67d6E8D448099B3bC03D`](https://basescan.org/address/0xB7caD3ca5F2BD8aEC2Eb67d6E8D448099B3bC03D) |
+| LPVault | [`0xDD47d84AB71b98a36FbDC89C815648a6D8648a6`](https://basescan.org/address/0xDD47d84AB71b98a36FbDC89C815648a6D8648a6) |
+
+**Chain:** Base (Chain ID 8453)
 
 ---
 
