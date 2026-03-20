@@ -109,7 +109,7 @@ cd miner && npm run build
 | Mineable supply | 18,900,000 AGENT | MAX_SUPPLY - LP_RESERVE |
 | Base reward | 3 AGENT/mine | Decays 10% per 500k mines |
 | NFT supply | 10,000 | MiningAgent cap |
-| LP threshold | 4.9 ETH | Plus 0.03 ETH UNCX fee = 4.93 ETH minimum |
+| LP threshold | 4.97 ETH | Plus 0.03 ETH UNCX fee = 5 ETH minimum |
 | Add liquidity threshold | 0.1 ETH | Minimum for addLiquidity() — below this, gas exceeds value |
 | Fee tier | 0.3% (3000) | Uniswap V3 |
 | UNCX lock | Eternal | type(uint256).max |

@@ -235,7 +235,7 @@ contract LPVaultEdgeTest is Test {
 
     function testDeployLP_ExactThreshold_Succeeds() public {
         agentCoin.mint(address(lpVault), 2_100_000e18);
-        vm.deal(address(lpVault), 4.93 ether); // exact: LP_DEPLOY_THRESHOLD + UNCX_FLAT_FEE
+        vm.deal(address(lpVault), 5 ether); // exact: LP_DEPLOY_THRESHOLD + UNCX_FLAT_FEE
 
         vm.prank(deployer);
         lpVault.deployLP(0);
@@ -244,7 +244,7 @@ contract LPVaultEdgeTest is Test {
 
     function testDeployLP_JustBelowThreshold_Reverts() public {
         agentCoin.mint(address(lpVault), 2_100_000e18);
-        vm.deal(address(lpVault), 4.93 ether - 1);
+        vm.deal(address(lpVault), 5 ether - 1);
 
         vm.prank(deployer);
         vm.expectRevert("Below threshold");

@@ -63,9 +63,9 @@ Press Ctrl+C after 1 successful mine. Verify:
 
 ---
 
-## Phase C — LP Deploy (when vault reaches 4.93 ETH)
+## Phase C — LP Deploy (when vault reaches 5 ETH)
 
-The vault accumulates ETH from mint fees. At starting price (0.002 ETH), ~2,465 mints fills the vault.
+The vault accumulates ETH from mint fees. At starting price (0.002 ETH), ~2,500 mints fills the vault.
 
 ### C1. Monitor Vault Balance
 
@@ -73,7 +73,7 @@ The vault accumulates ETH from mint fees. At starting price (0.002 ETH), ~2,465 
 cast balance $LP_VAULT_ADDRESS --rpc-url $BASE_RPC
 ```
 
-Proceed when >= 4,930,000,000,000,000,000 wei (4.93 ETH).
+Proceed when >= 5,000,000,000,000,000,000 wei (5 ETH).
 
 ### C2. Deploy LP (Step 6)
 

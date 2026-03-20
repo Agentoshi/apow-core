@@ -104,7 +104,7 @@ MiningAgent (ERC-721 + ERC-8004 miner NFTs, 10k supply)
 | LP_RESERVE | 2,100,000 AGENT | AgentCoin |
 | MINEABLE_SUPPLY | 18,900,000 AGENT | AgentCoin |
 | BASE_REWARD | 3 AGENT per mine | AgentCoin |
-| LP_DEPLOY_THRESHOLD | 4.9 ETH | LPVault |
+| LP_DEPLOY_THRESHOLD | 4.97 ETH | LPVault |
 | UNCX_FLAT_FEE | 0.03 ETH | LPVault |
 | FEE_TIER | 3000 (0.3%) | LPVault |
 | ETERNAL_LOCK | type(uint256).max | LPVault |
@@ -125,7 +125,7 @@ MiningAgent (ERC-721 + ERC-8004 miner NFTs, 10k supply)
 | 2 | Verify on Basescan | All contracts verified, source readable | N/A |
 | 3 | Smoke test: mint 1 NFT | Token #1 minted, fee forwarded to vault | Yes |
 | 4 | Smoke test: mine 1 block | 1 mine confirmed, AGENT earned, transfers locked | Yes |
-| 5 | Fund LP vault | Vault balance >= 4.93 ETH | No (ETH locked) |
+| 5 | Fund LP vault | Vault balance >= 5 ETH | No (ETH locked) |
 | 6 | Deploy liquidity pool | LP created, UNCX locked, transfers unlocked | No |
 | 7 | Verify LP deployment | Uniswap pool visible, UNCX eternal lock confirmed | N/A |
 | 7b | Add liquidity (optional) | Accumulated ETH added to existing UNCX position | No |
@@ -329,22 +329,22 @@ Mining must succeed AND transfers must still be locked. If transfers are NOT loc
 
 ### Step 5 — Fund LP Vault
 
-The vault needs **>= 4.93 ETH** (4.9 ETH `LP_DEPLOY_THRESHOLD` + 0.03 ETH `UNCX_FLAT_FEE`).
+The vault needs **>= 5 ETH** (4.97 ETH `LP_DEPLOY_THRESHOLD` + 0.03 ETH `UNCX_FLAT_FEE`).
 
 **Option A: Direct funding (recommended for launch):**
 ```bash
 cast send $LP_VAULT_ADDRESS \
-  --value 4.93ether \
+  --value 5ether \
   --rpc-url $BASE_RPC \
   --private-key $PRIVATE_KEY
 ```
 
-**Option B: Wait for organic mint fees to accumulate.** (Slow — each mint sends ~0.002 ETH, so ~2,465 mints needed.)
+**Option B: Wait for organic mint fees to accumulate.** (Slow — each mint sends ~0.002 ETH, so ~2,500 mints needed.)
 
 **Verification:**
 ```bash
 cast balance $LP_VAULT_ADDRESS --rpc-url $BASE_RPC
-# Must be >= 4930000000000000000 (4.93 ETH in wei)
+# Must be >= 5000000000000000000 (5 ETH in wei)
 # If mint fees already accumulated, add the difference:
 # cast send $LP_VAULT_ADDRESS --value <remaining-wei>ether --rpc-url $BASE_RPC --private-key $PRIVATE_KEY
 ```
@@ -353,7 +353,7 @@ cast balance $LP_VAULT_ADDRESS --rpc-url $BASE_RPC
 
 ### ══════ STOP AND VERIFY ══════
 
-Vault balance must be >= 4.93 ETH before proceeding. The DeployLP script will revert if below threshold.
+Vault balance must be >= 5 ETH before proceeding. The DeployLP script will revert if below threshold.
 
 **WARNING:** After this point, ETH sent to the vault has no withdrawal function. It can only exit via `deployLP()`. Ensure the amount is correct before sending.
 
@@ -661,7 +661,7 @@ cast call 0x4200000000000000000000000000000000000006 "balanceOf(address)(uint256
 
 # ETH balance should be restored
 cast balance $LP_VAULT_ADDRESS --rpc-url $BASE_RPC
-# Expected: ~4.9 ETH
+# Expected: ~4.97 ETH
 ```
 
 ### Wrong cross-pointer detected

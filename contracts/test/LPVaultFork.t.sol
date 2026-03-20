@@ -231,7 +231,7 @@ contract LPVaultForkTest is Test {
 
         // WETH should be zero, ETH should be back
         assertEq(IERC20(WETH).balanceOf(address(lpVault)), 0);
-        assertTrue(address(lpVault).balance > 4.9 ether);
+        assertTrue(address(lpVault).balance > 4.97 ether);
     }
 
     function testFork_MiningBypassImpossible() public onlyFork {

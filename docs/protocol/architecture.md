@@ -43,7 +43,7 @@ The ERC-20 token with built-in proof-of-work mining. Follows [ERC-918](https://e
 Accumulates ETH from mint fees. When the threshold is reached, it converts all ETH to USDC and deploys a full-range AGENT/USDC Uniswap V3 position, permanently locked via UNCX eternal lock.
 
 **Key properties:**
-- Automated LP deployment at 4.93 ETH threshold
+- Automated LP deployment at 5 ETH threshold
 - AGENT/USDC pair (not AGENT/WETH)
 - UNCX eternal lock — liquidity can never be withdrawn
 - Deployer retains trading fee collection rights only

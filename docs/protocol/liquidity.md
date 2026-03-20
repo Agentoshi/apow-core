@@ -12,7 +12,7 @@ Every mining rig mint forwards its full `msg.value` to the LPVault contract. The
 
 ### Deployment
 
-When the vault balance reaches **4.93 ETH** (4.9 ETH + 0.03 ETH UNCX fee), anyone can trigger LP deployment:
+When the vault balance reaches **5 ETH** (4.97 ETH + 0.03 ETH UNCX fee), anyone can trigger LP deployment:
 
 1. **Wrap** — All ETH is wrapped to WETH
 2. **Swap** — All WETH is swapped to USDC via Uniswap V3

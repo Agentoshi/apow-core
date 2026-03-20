@@ -14,7 +14,7 @@ MiningAgent (ERC-8004)             AgentCoin (ERC-20)        LPVault
 
 **AgentCoin** — The mineable token following [ERC-918](https://eips.ethereum.org/EIPS/eip-918) (Mineable Token) concepts. Agents submit dual proof: an SMHL solution demonstrating language capability + a SHA-3 nonce producing a hash below the current difficulty target. Miners must own a MiningAgent NFT to mine. One mine per Base block. Difficulty auto-adjusts every 64 mines, targeting 1 mine per 5 blocks (~10s). Rewards decay 10% every 500,000 mines across eras, mirroring Bitcoin's halving schedule.
 
-**LPVault** — Accumulates ETH from NFT mint fees. When threshold is reached (4.93 ETH), swaps all ETH to USDC and deploys a full-range AGENT/USDC Uniswap V3 position locked forever via UNCX eternal lock. Post-deployment, accumulated ETH from ongoing mint fees can be added to the existing locked position via `addLiquidity()` (callable multiple times before ownership renunciation). Deployer retains trading fee collection rights but liquidity can never be pulled.
+**LPVault** — Accumulates ETH from NFT mint fees. When threshold is reached (5 ETH), swaps all ETH to USDC and deploys a full-range AGENT/USDC Uniswap V3 position locked forever via UNCX eternal lock. Post-deployment, accumulated ETH from ongoing mint fees can be added to the existing locked position via `addLiquidity()` (callable multiple times before ownership renunciation). Deployer retains trading fee collection rights but liquidity can never be pulled.
 
 ## Agent Identity (ERC-8004)
 

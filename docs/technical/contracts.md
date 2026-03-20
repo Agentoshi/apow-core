@@ -131,7 +131,7 @@ LP accumulator with automated Uniswap V3 deployment and UNCX eternal lock.
 | `SWAP_ROUTER` | `0x2626...e481` | Uniswap V3 SwapRouter |
 | `POSITION_MANAGER` | `0x03a5...4f1` | Uniswap V3 NonfungiblePositionManager |
 | `UNCX_V3_LOCKER` | `0x2312...CC1` | UNCX V3 Locker |
-| `LP_DEPLOY_THRESHOLD` | 4.9 ether | Minimum balance to deploy |
+| `LP_DEPLOY_THRESHOLD` | 4.97 ether | Minimum balance to deploy |
 | `UNCX_FLAT_FEE` | 0.03 ether | UNCX lock fee |
 | `FEE_TIER` | 3000 | 0.3% Uniswap fee tier |
 

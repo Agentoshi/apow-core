@@ -98,7 +98,7 @@ contract LPVault is Ownable, ReentrancyGuard {
     address public constant UNCX_V3_LOCKER = 0x231278eDd38B00B07fBd52120CEf685B9BaEBCC1;
     address public constant UNISWAP_V3_FACTORY = 0x33128a8fC17869897dcE68Ed026d694621f6FDfD;
 
-    uint256 public constant LP_DEPLOY_THRESHOLD = 4.9 ether;
+    uint256 public constant LP_DEPLOY_THRESHOLD = 4.97 ether;
     uint256 public constant ADD_LIQUIDITY_THRESHOLD = 0.1 ether;
     uint256 public constant UNCX_FLAT_FEE = 0.03 ether;
     uint24 public constant FEE_TIER = 3000;
