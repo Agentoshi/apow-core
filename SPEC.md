@@ -155,10 +155,10 @@ constructor() ERC721("AgentCoin Miner", "MINER") Ownable(msg.sender) EIP712("Min
 - `targetAsciiSum = 400 + (uint16(seed[1]) * 3)` → clamped to feasible range
 
 `_verifySMHL(string calldata solution, SMHLChallenge memory c) internal pure returns (bool)`:
-- Check `bytes(solution).length == c.totalLength`
-- Check char at position == `c.charValue`
-- Sum ASCII of first N chars, check == `c.targetAsciiSum`
-- Count words (space-separated), check == `c.wordCount`
+- Check `bytes(solution).length` is within ±5 of `c.totalLength`
+- Check `c.charValue` appears ANYWHERE in the solution string (not at a specific position)
+- Count words (space-separated), check within ±2 of `c.wordCount`
+- **Note:** `targetAsciiSum`, `firstNChars`, and `charPosition` are derived in `_deriveChallenge` and stored in the challenge struct, but are NOT verified on-chain. The challenge struct has 6 fields but only 3 are checked in `_verifySMHL` (totalLength, charValue, wordCount) — all with tolerant matching.
 
 `_determineRarity(bytes32 seed) internal pure returns (uint8 rarityTier, uint16 hp)`:
 - `roll = uint256(seed) % 100`
@@ -221,6 +221,7 @@ pragma solidity ^0.8.26;
 - `minesSinceAdjustment` — uint256
 - `totalMinted` — uint256 (tracks minted supply, excludes LP reserve)
 - `smhlNonce` — uint256 (increments each mine)
+- `lpDeployed` — bool (transfer lock flag, default false)
 
 **Per-token tracking (for dynamic NFT metadata):**
 - `mapping(uint256 => uint256) public tokenMineCount`
@@ -242,6 +243,20 @@ constructor(address _miningAgent, address _lpVault) ERC20("AgentCoin", "AGENT") 
 - `lastMineBlockNumber = block.number`
 - `lastAdjustmentBlock = block.number`
 - Mints `LP_RESERVE` to `_lpVault`
+
+### Transfer Lock
+
+Before LP deployment, AGENT token transfers are restricted to prevent pre-market trading.
+
+`setLPDeployed() external`:
+- `require(msg.sender == lpVault, "Only LPVault")`
+- Sets `lpDeployed = true`
+- Called by `LPVault.deployLP()` BEFORE the UNCX lock (because UNCX `collect()` triggers dust AGENT transfers that would otherwise revert)
+
+`_update(address from, address to, uint256 value) internal override`:
+- If `lpDeployed == false`: blocks all transfers EXCEPT minting (`from == address(0)`) and transfers where `from == lpVault` or `to == lpVault`
+- Once `lpDeployed == true`: all transfers proceed normally
+- This prevents pre-market trading while allowing the LP reserve mint and LPVault operations
 
 **Functions:**
 
@@ -286,7 +301,7 @@ pragma solidity ^0.8.26;
 
 **Imports:** OpenZeppelin Ownable, IERC20
 
-**Inline interfaces:** `IWETH`, `ISwapRouter`, `INonfungiblePositionManager`, `IUNCXLocker`
+**Inline interfaces:** `IWETH`, `ISwapRouter`, `INonfungiblePositionManager`, `IUNCXLocker`, `IUniswapV3Factory`
 
 **Constants (Base mainnet addresses):**
 - `WETH = 0x4200000000000000000000000000000000000006`
@@ -298,16 +313,20 @@ pragma solidity ^0.8.26;
 - `UNCX_FLAT_FEE = 0.03 ether`
 - `FEE_TIER = 3000` (0.3%)
 - `ETERNAL_LOCK = type(uint256).max`
+- `UNISWAP_V3_FACTORY = 0x33128a8fC17869897dcE68Ed026d694621f6FDfD`
+- `ADD_LIQUIDITY_THRESHOLD = 0.1 ether`
 - `MIN_TICK = -887220` / `MAX_TICK = 887220` (full range, tick spacing 60)
 
 **State:**
-- `agentCoin` — IERC20 (set once by owner)
+- `agentCoin` — IAgentCoin (set once by owner)
 - `lpDeployed` — bool
 - `positionTokenId` — uint256 (Uniswap V3 position NFT ID)
+- `uncxLockId` — uint256 (UNCX lock identifier, stored after addLiquidity)
 - `deployer` — address (retains fee collection rights)
 
 **Events:**
 - `LPDeployed(uint256 positionTokenId, uint256 agentAmount, uint256 usdcAmount)`
+- `LiquidityAdded(uint256 agentAmount, uint256 usdcAmount)`
 - `AgentCoinSet(address agentCoin)`
 
 **Constructor:**
@@ -327,6 +346,8 @@ constructor(address _deployer) Ownable(msg.sender)
 - `require(!lpDeployed)`
 - `require(agentCoin set)`
 - `require(balance >= LP_DEPLOY_THRESHOLD + UNCX_FLAT_FEE)`
+- Verify pool doesn't already exist via `IUniswapV3Factory.getPool()` (reverts if pool exists)
+- Call `agentCoin.setLPDeployed()` BEFORE the UNCX lock (because UNCX `collect()` triggers dust AGENT transfers that would revert if transfers are still locked)
 - Reserve UNCX flat fee, wrap remaining ETH → WETH
 - Swap **all** WETH → USDC via SwapRouter (LP pair is AGENT/USDC, not AGENT/WETH)
 - `_orderedPositionAmounts()` — sort token0/token1 by address
@@ -338,6 +359,18 @@ constructor(address _deployer) Ownable(msg.sender)
   - Fee name: `"DEFAULT"`, UNCX flat fee paid in ETH
 - Set `positionTokenId`, `lpDeployed = true`
 - Emit `LPDeployed`
+
+`addLiquidity(uint256 minUsdcOut, uint256 minAgentOut) external`:
+- `require(lpDeployed)`
+- `require(balance >= ADD_LIQUIDITY_THRESHOLD)`
+- Wraps accumulated ETH → WETH, swaps half to USDC
+- Increases liquidity on existing UNCX-locked position
+- Stores `uncxLockId` from UNCX locker
+- Emits `LiquidityAdded`
+
+`emergencyUnwrapWeth() external onlyOwner`:
+- Owner-only recovery function for partially failed `deployLP`
+- Unwraps any stranded WETH back to ETH so `deployLP` can be retried
 
 **Internal helpers:**
 - `_swapWethToUsdc(amountIn, amountOutMinimum)` — exact input single swap
@@ -351,7 +384,7 @@ constructor(address _deployer) Ownable(msg.sender)
 
 Single library that generates complete SVG + JSON metadata.
 
-**`tokenURI(uint256 tokenId, uint8 rarityTier, uint16 hp, uint256 mintBlock, uint256 mineCount, uint256 earnings) external pure returns (string memory)`:**
+**`tokenURI(uint256 tokenId, uint8 rarityTier, uint16 hp, uint256 mintBlock, uint256 mineCount, uint256 earnings) internal pure returns (string memory)`:**
 
 Returns `data:application/json;base64,...` with:
 ```json
@@ -363,33 +396,33 @@ Returns `data:application/json;base64,...` with:
     {"trait_type": "Rarity", "value": "Mythic"},
     {"trait_type": "Hashpower", "value": "5.0x"},
     {"trait_type": "Mines", "display_type": "number", "value": 1234},
-    {"trait_type": "Earned", "display_type": "number", "value": 12340},
+    {"trait_type": "Earned", "value": "123.4 AGENT"},
     {"trait_type": "Mint Block", "display_type": "number", "value": 18234567}
   ]
 }
 ```
 
 **SVG structure:**
-- 320x420 viewBox, dark background (#0a0a0a)
-- Rarity-colored border (2px)
+- 400x400 viewBox, dark background (#0a0a0a)
+- Rarity-colored border (1.5px)
 - Header: "AGENTCOIN MINER" + token ID + rarity badge
 - 16x16 pixel grid: each pixel color from `keccak256(abi.encodePacked(tokenId, uint8(x), uint8(y)))` mapped to rarity palette
 - Spec sheet: RARITY, HASHPOWER, MINES, EARNED, MINT BLOCK
 - Footer: "PROOF OF AGENTIC WORK"
 
-**Rarity palettes (3 colors each for pixel grid):**
-- Common (#808080): #666, #888, #AAA
-- Uncommon (#00FF88): #004D29, #00FF88, #66FFBB
-- Rare (#0088FF): #003366, #0088FF, #66BBFF
-- Epic (#AA00FF): #330066, #AA00FF, #CC66FF
-- Mythic (#FFD700): #664400, #FFD700, #FFE866
+**Rarity palettes (4 colors per palette for pixel grid):**
+- Common:   #333333, #666666, #999999, #444444
+- Uncommon: #003D1F, #00FF88, #00CC6A, #66FFBB
+- Rare:     #002B55, #0088FF, #0066CC, #66BBFF
+- Epic:     #220044, #AA00FF, #8800CC, #CC66FF
+- Mythic:   #553300, #FFD700, #FFB800, #FFE866
 
 **Pixel generation:**
 ```solidity
 for y in 0..16:
   for x in 0..16:
     hash = keccak256(abi.encodePacked(tokenId, uint8(x), uint8(y)))
-    colorIndex = uint8(hash[0]) % 3
+    colorIndex = uint8(hash[0]) % 4
     color = palette[rarityTier][colorIndex]
 ```
 
@@ -411,10 +444,11 @@ interface IMiningAgent is IERC721 {
 interface IAgentCoin {
     function tokenMineCount(uint256 tokenId) external view returns (uint256);
     function tokenEarnings(uint256 tokenId) external view returns (uint256);
+    function setLPDeployed() external;
 }
 ```
 
-## Tests (197 total)
+## Tests (231 total, 12 suites)
 
 ### MiningAgent.t.sol (7 tests)
 - `testGetChallenge` — returns valid params, stores seed
@@ -517,14 +551,17 @@ interface IAgentCoin {
 ## Deploy Script
 
 ```solidity
-// Deploy order:
-// 1. Deploy MiningAgent
-// 2. Deploy LPVault(deployer)
+// Deploy order (Deploy.s.sol):
+// 1. Deploy LPVault(deployer)
+// 2. Deploy MiningAgent
 // 3. Deploy AgentCoin(miningAgent, lpVault) — mints 2.1M AGENT to vault
 // 4. miningAgent.setLPVault(lpVault)
 // 5. miningAgent.setAgentCoin(agentCoin)
 // 6. lpVault.setAgentCoin(agentCoin)
-// 7. Renounce ownership on all three contracts
+//
+// Renounce (separate script: Renounce.s.sol):
+// 7. Requires lpDeployed == true (safety check)
+// 8. Renounce ownership on all three contracts
 ```
 
 ## Important Notes

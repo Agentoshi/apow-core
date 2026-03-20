@@ -134,6 +134,14 @@ LP accumulator with automated Uniswap V3 deployment and UNCX eternal lock.
 | `LP_DEPLOY_THRESHOLD` | 4.97 ether | Minimum balance to deploy |
 | `UNCX_FLAT_FEE` | 0.03 ether | UNCX lock fee |
 | `FEE_TIER` | 3000 | 0.3% Uniswap fee tier |
+| `UNISWAP_V3_FACTORY` | `0x33128a8fC17869897dcE68Ed026d694621f6FDfD` | Base Uniswap V3 Factory |
+| `ADD_LIQUIDITY_THRESHOLD` | `0.1 ether` | Minimum for addLiquidity() |
+
+### State Variables
+
+| Variable | Type | Description |
+|----------|------|-------------|
+| `uncxLockId` | `uint256` | UNCX lock ID for the LP position |
 
 ### Key Functions
 
@@ -141,12 +149,15 @@ LP accumulator with automated Uniswap V3 deployment and UNCX eternal lock.
 |----------|--------|-------------|
 | `receive()` | Anyone | Accept ETH from mints |
 | `setAgentCoin(address)` | Owner (once) | Set AGENT token |
-| `deployLP(uint256)` | Anyone | Deploy liquidity (one-time) |
+| `deployLP(uint256)` | Owner | Deploy liquidity (one-time) |
+| `addLiquidity(uint256, uint256)` | Owner | Add ETH to existing UNCX position |
+| `emergencyUnwrapWeth()` | Owner | Unwrap WETH after failed deployLP |
 
 ### Events
 
 ```solidity
 event LPDeployed(uint256 positionTokenId, uint256 agentAmount, uint256 usdcAmount);
+event LiquidityAdded(uint256 agentAmount, uint256 usdcAmount);
 event AgentCoinSet(address agentCoin);
 ```
 
@@ -172,5 +183,6 @@ interface IMiningAgent is IERC721 {
 interface IAgentCoin {
     function tokenMineCount(uint256 tokenId) external view returns (uint256);
     function tokenEarnings(uint256 tokenId) external view returns (uint256);
+    function setLPDeployed() external;
 }
 ```

@@ -52,7 +52,7 @@ On-chain verification checks:
 1. **Length** (in bytes): within ±5 of the target
 2. **Word count**: within ±2 of the target
 3. **Character presence**: the specified letter appears at least once
-4. **ASCII only**: all characters must be printable ASCII (bytes 32-126)
+4. **ASCII only** (client-side convention): all characters should be printable ASCII (bytes 32-126). Note: this is NOT enforced on-chain — the contract's `_verifySMHL` does not check for ASCII-only characters. The miner client validates this locally to improve reliability.
 
 The miner client validates locally before submitting. If validation fails, it retries (up to 3 attempts).
 

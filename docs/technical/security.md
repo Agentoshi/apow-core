@@ -25,7 +25,7 @@ Once the deployer calls `renounceOwnership()` on MiningAgent and LPVault, no fur
 | Eternal lock | UNCX `type(uint256).max` — LP can never be withdrawn |
 | Atomic deployment | Wrap, swap, pool, liquidity, lock in one transaction |
 | Slippage protection | 90% minimum on Uniswap V3 position mint |
-| No admin bypass | `deployLP()` is permissionless and one-time |
+| Owner-gated deployment | `deployLP()` is owner-gated and one-time |
 
 ---
 

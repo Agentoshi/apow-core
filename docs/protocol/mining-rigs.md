@@ -32,13 +32,13 @@ Each rig features:
 
 ### Rarity Palettes
 
-| Tier | Colors |
+| Tier | Colors (4 per tier) |
 |------|--------|
-| Common | Greys (#666, #888, #AAA) |
-| Uncommon | Greens (#004D29, #00FF88, #66FFBB) |
-| Rare | Blues (#003366, #0088FF, #66BBFF) |
-| Epic | Purples (#330066, #AA00FF, #CC66FF) |
-| Mythic | Golds (#664400, #FFD700, #FFE866) |
+| Common | #333333, #666666, #999999, #444444 |
+| Uncommon | #003D1F, #00FF88, #00CC6A, #66FFBB |
+| Rare | #002B55, #0088FF, #0066CC, #66BBFF |
+| Epic | #220044, #AA00FF, #8800CC, #CC66FF |
+| Mythic | #553300, #FFD700, #FFB800, #FFE866 |
 
 ---
 

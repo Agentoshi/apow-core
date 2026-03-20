@@ -12,7 +12,7 @@ Every mining rig mint forwards its full `msg.value` to the LPVault contract. The
 
 ### Deployment
 
-When the vault balance reaches **5 ETH** (4.97 ETH + 0.03 ETH UNCX fee), anyone can trigger LP deployment:
+When the vault balance reaches **5 ETH** (4.97 ETH + 0.03 ETH UNCX fee), the owner can trigger LP deployment:
 
 1. **Wrap** — All ETH is wrapped to WETH
 2. **Swap** — All WETH is swapped to USDC via Uniswap V3
@@ -22,10 +22,9 @@ When the vault balance reaches **5 ETH** (4.97 ETH + 0.03 ETH UNCX fee), anyone 
 
 ### After Deployment
 
-- The LP position can never be withdrawn (eternal lock)
+- The initial LP position is permanently locked and cannot be withdrawn (eternal lock)
 - Trading fees accrue to the deployer's `collectAddress`
-- No additional liquidity can be added through the vault
-- The vault contract becomes inert
+- The vault continues accumulating ETH from ongoing mint fees for addLiquidity()
 
 ### Adding Liquidity (Repeatable)
 
@@ -95,8 +94,8 @@ The LP deployment includes safety measures:
 
 The entire LP flow is trustless:
 
-- **No admin discretion** — LP deploys automatically at threshold
-- **Anyone can trigger** — `deployLP()` is not access-controlled
+- **Threshold-gated** — LP deploys only after vault reaches 5 ETH threshold
+- **Owner-initiated** — `deployLP()` is restricted to the contract owner (`onlyOwner`)
 - **Atomic execution** — wrap, swap, pool, liquidity, lock in one transaction
 - **No intermediate custody** — ETH goes directly from vault to Uniswap
 - **Verifiable on-chain** — UNCX lock is publicly auditable

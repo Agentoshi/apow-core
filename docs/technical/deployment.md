@@ -73,7 +73,7 @@ vault.renounceOwnership();
 
 Permanently disables all admin functions. The system becomes fully autonomous and immutable.
 
-> **AgentCoin has no `Ownable` functions** — it is immutable from deployment.
+> **AgentCoin inherits Ownable** for the `renounceOwnership()` lifecycle function. The `Renounce.s.sol` script explicitly calls `renounceOwnership()` on AgentCoin. After renunciation, it becomes fully immutable.
 
 ---
 
