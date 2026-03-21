@@ -39,7 +39,7 @@ RPC_URL=https://base-mainnet.g.alchemy.com/v2/THEIR_KEY
 RPC_URL=http://localhost:8545
 ```
 
-The default (`https://mainnet.base.org`) is Base's free public RPC — sufficient for casual mining.
+The default (`https://mainnet.base.org`) is Base's free public RPC. **However, it has aggressive rate limits and is unreliable for sustained mining — transactions frequently fail with `429 Too Many Requests` or timeout.** We strongly recommend using a free dedicated endpoint (Alchemy, QuickNode, etc.) even for a single miner.
 
 ---
 
@@ -47,8 +47,8 @@ The default (`https://mainnet.base.org`) is Base's free public RPC — sufficien
 
 | Setup | Monthly Cost | Use Case |
 |-------|-------------|----------|
-| Public Base RPC (default) | $0 | Casual mining |
-| Alchemy free tier | $0 | 1 dedicated miner |
+| Public Base RPC (default) | $0 | **Not recommended** — unreliable, frequent 429 errors |
+| Alchemy free tier | $0 | **Recommended** — 300M CU/month, reliable |
 | Alchemy PAYG | ~$20/mo | Power mining |
 | Own Base node | Electricity only | Mining farm |
 

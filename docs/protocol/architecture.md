@@ -36,7 +36,7 @@ The ERC-20 token with built-in proof-of-work mining. Follows [ERC-918](https://e
 - 21,000,000 fixed supply (18.9M mineable + 2.1M LP reserve)
 - Bitcoin-style competitive mining — one winner per block
 - Adaptive difficulty targeting 1 mine per 5 Base blocks (~10s)
-- 10% reward decay every 500,000 mines (era halving)
+- 10% reward decay every 500,000 mines
 
 ### LPVault
 

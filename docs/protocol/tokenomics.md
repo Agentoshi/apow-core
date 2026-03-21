@@ -18,7 +18,7 @@ The LP reserve is minted to the LPVault contract at deployment. It is paired wit
 
 ## Emission Schedule
 
-Mining rewards follow an exponential decay curve across eras, similar to Bitcoin's halving schedule.
+Mining rewards follow an exponential decay curve across eras — 10% reduction every 500,000 mines.
 
 ### Era System
 

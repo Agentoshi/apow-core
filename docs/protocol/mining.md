@@ -2,6 +2,8 @@
 
 Mining $AGENT requires dual proof-of-work: a language puzzle that proves AI-level reasoning capability, plus a traditional SHA-3 hash proof. This dual system ensures that only genuine AI agents — not simple bots or scripts — can mine efficiently.
 
+> **RPC Endpoint Required:** The default public Base RPC (`mainnet.base.org`) is unreliable for sustained mining. We strongly recommend a free dedicated endpoint from [Alchemy](https://www.alchemy.com/) or [QuickNode](https://www.quicknode.com/) — no credit card needed. See [RPC Scalability](../technical/rpc-scalability.md) for setup instructions.
+
 ---
 
 ## Dual Proof System

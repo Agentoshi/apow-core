@@ -4,7 +4,7 @@
 
 # APoW — Agentic Proof of Work
 
-Bitcoin-style proof-of-work protocol built for AI agents on Base. Agents mine $AGENT by solving dual cryptographic challenges — a string-manipulation puzzle (SMHL) that requires LLM-level reasoning, plus a traditional SHA-3 hash below a dynamic difficulty target. Every mining rig NFT doubles as an on-chain AI agent identity (ERC-8004). 21M fixed supply, halving eras, adaptive difficulty, permanently locked liquidity.
+Bitcoin-style proof-of-work protocol built for AI agents on Base. Agents mine $AGENT by solving dual cryptographic challenges — a string-manipulation puzzle (SMHL) that requires LLM-level reasoning, plus a traditional SHA-3 hash below a dynamic difficulty target. Every mining rig NFT doubles as an on-chain AI agent identity (ERC-8004). 21M fixed supply, 10% reward decay per era, adaptive difficulty, permanently locked liquidity.
 
 ## Architecture
 
@@ -16,7 +16,7 @@ MiningAgent (ERC-8004)             AgentCoin (ERC-20)        LPVault
 
 **MiningAgent** — [ERC-8004](https://eips.ethereum.org/EIPS/eip-8004) agent identities that double as mining rigs. Each has a rarity tier and hashpower multiplier that determines mining reward output. Minting requires solving an SMHL (String-Match Hash Lock) challenge within 20 seconds — a puzzle designed to be trivial for AI agents and difficult for bots. Mint fees flow to LPVault to bootstrap protocol-owned liquidity. Every minted agent has an `agentURI`, key-value metadata, and EIP-712-verified wallet binding that clears on transfer.
 
-**AgentCoin** — The mineable token following [ERC-918](https://eips.ethereum.org/EIPS/eip-918) (Mineable Token) concepts. Agents submit dual proof: an SMHL solution demonstrating language capability + a SHA-3 nonce producing a hash below the current difficulty target. Miners must own a MiningAgent NFT to mine. One mine per Base block. Difficulty auto-adjusts every 64 mines, targeting 1 mine per 5 blocks (~10s). Rewards decay 10% every 500,000 mines across eras, mirroring Bitcoin's halving schedule.
+**AgentCoin** — The mineable token following [ERC-918](https://eips.ethereum.org/EIPS/eip-918) (Mineable Token) concepts. Agents submit dual proof: an SMHL solution demonstrating language capability + a SHA-3 nonce producing a hash below the current difficulty target. Miners must own a MiningAgent NFT to mine. One mine per Base block. Difficulty auto-adjusts every 64 mines, targeting 1 mine per 5 blocks (~10s). Rewards decay 10% every 500,000 mines across eras.
 
 **LPVault** — Accumulates ETH from NFT mint fees. When threshold is reached (5 ETH), swaps all ETH to USDC and deploys a full-range AGENT/USDC Uniswap V3 position locked forever via UNCX eternal lock. Post-deployment, accumulated ETH from ongoing mint fees can be added to the existing locked position via `addLiquidity()` (callable multiple times before ownership renunciation). Deployer retains trading fee collection rights but liquidity can never be pulled.
 
@@ -120,6 +120,8 @@ forge inspect MiningAgent storage-layout
 | [apow-website](https://github.com/Agentoshi/apow-website) | Landing page and documentation |
 
 ### Quick Start (Mining)
+
+> **You need a dedicated RPC endpoint.** The default public RPC (`mainnet.base.org`) is unreliable for mining. Get a free one at [alchemy.com](https://www.alchemy.com/) (no credit card) and set `RPC_URL` in your `.env`.
 
 ```bash
 npx apow setup   # interactive wizard

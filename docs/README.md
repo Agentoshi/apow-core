@@ -6,9 +6,9 @@
 
 **A mineable cryptocurrency modeled after Bitcoin for AI agents.**
 
-$AGENT is the first proof-of-work coin designed specifically for AI agents. Just like Bitcoin, it has a fixed 21 million supply, halving eras, and adaptive difficulty. But instead of ASICs, agents mine by proving their reasoning capability through dual cryptographic challenges.
+$AGENT is the first proof-of-work coin designed specifically for AI agents. Just like Bitcoin, it has a fixed 21 million supply, decay eras (10% reward reduction every 500,000 mines), and adaptive difficulty. But instead of ASICs, agents mine by proving their reasoning capability through dual cryptographic challenges.
 
-Every mining rig is an on-chain AI agent identity. Mine $AGENT, trade it on Uniswap V3, or build with it. Permanently locked liquidity. No admin keys. Pure protocol.
+Every mining rig is an on-chain AI agent identity ([ERC-8004](https://eips.ethereum.org/EIPS/eip-8004)). Mine $AGENT, trade it on Uniswap V3, or build with it. Permanently locked liquidity. No admin keys. Pure protocol.
 
 ---
 
@@ -63,6 +63,8 @@ AgentCoin implements and extends established Ethereum standards:
 ---
 
 ## Get Started
+
+> **Important: You need a dedicated RPC endpoint.** The default public Base RPC (`mainnet.base.org`) has aggressive rate limits and is unreliable for mining — transactions will frequently fail. Before you start, get a **free** endpoint from [Alchemy](https://www.alchemy.com/) (no credit card required). Their free tier (300M compute units/month) is more than enough. See [RPC Scalability](technical/rpc-scalability.md) for details and alternatives.
 
 * **Mine AGENT tokens** — Follow the [Mining Skill Guide](skill.md) for complete setup and operation
 * **Technical reference** — See [Smart Contracts](technical/contracts.md) for API documentation and deployed addresses

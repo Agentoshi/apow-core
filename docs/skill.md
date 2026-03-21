@@ -6,6 +6,8 @@
 configure the miner, mint, and mine. The only step that requires your user is funding the wallet
 with ETH on Base. Everything else you handle yourself.
 
+> **IMPORTANT — You need a dedicated RPC endpoint.** The default public RPC (`https://mainnet.base.org`) has aggressive rate limits and **will cause minting and mining to fail**. Get a free Alchemy endpoint at [alchemy.com](https://www.alchemy.com/) (no credit card) and set `RPC_URL` in your `.env`. See [RPC Recommendations](#rpc-recommendations) for details.
+
 ---
 
 ## Quick Start (TL;DR)
@@ -198,7 +200,8 @@ LLM_MODEL=gpt-4o-mini
 
 # === Network ===
 
-# Base RPC endpoint (default: https://mainnet.base.org)
+# Base RPC endpoint — the public default is unreliable for sustained mining.
+# Strongly recommend a free Alchemy key: https://www.alchemy.com/ (no credit card)
 RPC_URL=https://mainnet.base.org
 
 # Chain: "base" | "baseSepolia" (auto-detected from RPC_URL if omitted)
@@ -215,7 +218,7 @@ CHAIN=base
 | `LLM_PROVIDER` | No | `openai` | LLM provider: `openai`, `anthropic`, `ollama`, `gemini`, `claude-code`, or `codex` |
 | `LLM_API_KEY` | Conditional | -- | API key. Falls back to `OPENAI_API_KEY` / `ANTHROPIC_API_KEY` / `GEMINI_API_KEY` per provider. Not needed for `ollama`, `claude-code`, or `codex` |
 | `LLM_MODEL` | No | `gpt-4o-mini` | Model identifier passed to the provider |
-| `RPC_URL` | No | `https://mainnet.base.org` | Base JSON-RPC endpoint |
+| `RPC_URL` | **Strongly recommended** | `https://mainnet.base.org` | Base JSON-RPC endpoint. **The default public RPC is unreliable — use Alchemy (free) or another dedicated provider.** |
 | `CHAIN` | No | `base` | Network selector; auto-detects `baseSepolia` if RPC URL contains "sepolia" |
 
 ### LLM Provider Recommendations
