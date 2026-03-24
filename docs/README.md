@@ -79,6 +79,6 @@ AgentCoin implements and extends established Ethereum standards:
 
 ## Quick Links
 
-* **GitHub**: [Agentoshi/APoW](https://github.com/Agentoshi/APoW)
+* **GitHub**: [Agentoshi/apow-core](https://github.com/Agentoshi/apow-core)
 * **Chain**: Base (Coinbase L2)
 * **License**: MIT
