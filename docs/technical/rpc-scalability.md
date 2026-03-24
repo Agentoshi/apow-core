@@ -4,6 +4,18 @@ AgentCoin's RPC model mirrors Bitcoin: **each miner is responsible for their own
 
 ---
 
+## Default: Alchemy x402 (v0.6.0+)
+
+As of v0.6.0, the CLI uses [Alchemy x402](https://x402.alchemy.com/) by default -- a premium Base RPC endpoint that charges per-request via the [x402 payment protocol](https://www.x402.org/). Your mining wallet pays automatically with USDC on Base.
+
+**No API key, no account, no rate limits.** Just fund your wallet with USDC (the `apow fund` command handles this automatically via auto-split).
+
+- **Cost:** ~$0.00002 per RPC call (~2 USDC covers ~100K calls)
+- **Fallback:** If no USDC is available, the CLI automatically falls back to the public RPC
+- **Override:** Set `RPC_URL` in `.env` to use a custom endpoint (disables x402)
+
+---
+
 ## The Bitcoin Parallel
 
 Bitcoin miners pay for:
@@ -15,8 +27,8 @@ Bitcoin miners pay for:
 **The Bitcoin protocol has zero infrastructure costs.** It runs forever with zero maintenance.
 
 AgentCoin works identically. Each miner provides:
-- Their own RPC endpoint (free, paid, or self-hosted)
-- Their own LLM API key (for SMHL solving)
+- Their own RPC endpoint (x402 default, free, paid, or self-hosted)
+- Their own LLM API key (for SMHL solving during minting only)
 - Their own wallet + private key
 - Their own compute (CPU for PoW grinding)
 
@@ -26,20 +38,23 @@ AgentCoin works identically. Each miner provides:
 
 ## How Miners Configure RPC
 
-Each miner sets their RPC in `miner/.env`:
+Each miner sets their RPC in `.env`:
 
 ```bash
-# Free public RPC (default)
-RPC_URL=https://mainnet.base.org
+# Default: Alchemy x402 (no RPC_URL needed — just have USDC in wallet)
+# The CLI auto-detects and uses x402 when RPC_URL is not set.
 
-# Their own Alchemy key (free tier: 30M CU/month)
+# Custom Alchemy key (free tier: 300M CU/month)
 RPC_URL=https://base-mainnet.g.alchemy.com/v2/THEIR_KEY
+
+# Free public RPC (unreliable for sustained mining)
+RPC_URL=https://mainnet.base.org
 
 # Their own Base node
 RPC_URL=http://localhost:8545
 ```
 
-The default (`https://mainnet.base.org`) is Base's free public RPC. **However, it has aggressive rate limits and is unreliable for sustained mining. Transactions frequently fail with `429 Too Many Requests` or timeout.** We strongly recommend using a free dedicated endpoint (Alchemy, QuickNode, etc.) even for a single miner.
+The default (x402) requires USDC in your mining wallet. The `apow fund` command auto-splits deposits into ETH (gas) + USDC (RPC). If no USDC is available, the CLI falls back to the public Base RPC (`mainnet.base.org`), which has rate limits.
 
 ---
 
@@ -47,9 +62,10 @@ The default (`https://mainnet.base.org`) is Base's free public RPC. **However, i
 
 | Setup | Monthly Cost | Use Case |
 |-------|-------------|----------|
-| Public Base RPC (default) | $0 | **Not recommended.** Unreliable, frequent 429 errors |
-| Alchemy free tier | $0 | **Recommended.** 300M CU/month, reliable |
+| Alchemy x402 (default) | ~$2/mo | **Recommended.** Premium RPC, pay-per-request via USDC |
+| Custom Alchemy (free tier) | $0 | 300M CU/month, reliable |
 | Alchemy PAYG | ~$20/mo | Power mining |
+| Public Base RPC | $0 | **Not recommended.** Unreliable, frequent 429 errors |
 | Own Base node | Electricity only | Mining farm |
 
 **At 10,000 concurrent miners:** Protocol cost = $0. Each miner's cost = $0-20/mo (their choice).

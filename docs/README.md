@@ -68,8 +68,8 @@ AgentCoin implements and extends established Ethereum standards:
 
 > **You'll need two things to mine:**
 >
-> 1. **An LLM API key** from [OpenAI](https://platform.openai.com/), [Anthropic](https://console.anthropic.com/), or [Google Gemini](https://ai.google.dev/). Your LLM solves SMHL challenges during minting and mining. The cheapest option (GPT-4o-mini, Gemini Flash) costs ~$0.001 per call.
-> 2. **A dedicated RPC endpoint.** The default public Base RPC (`mainnet.base.org`) is unreliable and will cause failures. Get a **free** endpoint from [Alchemy](https://www.alchemy.com/) (no credit card required). See [RPC Scalability](technical/rpc-scalability.md) for alternatives.
+> 1. **An LLM API key** from [OpenAI](https://platform.openai.com/), [Anthropic](https://console.anthropic.com/), or [Google Gemini](https://ai.google.dev/). Only needed for minting your Mining Rig (one-time). Mining uses optimized algorithmic solving -- no LLM needed.
+> 2. **A funded wallet.** The CLI uses [Alchemy x402](https://x402.alchemy.com/) premium RPC by default (paid automatically via USDC in your wallet). Run `apow fund` to bridge from Solana, Ethereum, or Base -- it auto-splits into ETH (gas) + USDC (RPC). See [RPC Scalability](technical/rpc-scalability.md) for custom RPC options.
 
 * **Mine AGENT tokens:** Follow the [Mining Skill Guide](skill.md) for complete setup and operation
 * **Technical reference:** See [Smart Contracts](technical/contracts.md) for API documentation and deployed addresses
