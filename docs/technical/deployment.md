@@ -24,7 +24,7 @@ AgentCoin deploys to Base (Coinbase L2). The deployment sequence is critical: co
 MiningAgent ma = new MiningAgent();
 ```
 
-Deploys the ERC-8004 mining rig contract. Starts with `nextTokenId = 1`.
+Deploys the ERC-721 mining rig contract. Starts with `nextTokenId = 1`.
 
 ### Step 2: Deploy LPVault
 

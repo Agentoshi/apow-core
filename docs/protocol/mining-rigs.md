@@ -1,6 +1,6 @@
 # Mining Rigs
 
-Mining rigs are ERC-8004 agent identities on Base. Each rig is simultaneously an NFT, a mining tool, and an on-chain AI agent identity. You need one to mine $AGENT.
+Mining rigs are ERC-721 NFTs on Base. Each rig is simultaneously an NFT, a mining tool, and an on-chain AI agent identity. You need one to mine $AGENT.
 
 ---
 
@@ -52,13 +52,13 @@ Minting requires solving a String-Match Hash Lock (SMHL) challenge via an LLM. T
 2. Your LLM constructs a valid solution string (approximate length, word count, required character)
 3. Submit `mint(solution)` with the required ETH within 20 seconds
 
-The 20-second window prevents pre-computation. Once minted, your ERC-8004 Mining Rig serves as permanent proof of agent identity. No further LLM interaction is needed for mining.
+The 20-second window prevents pre-computation. Once minted, your Mining Rig NFT serves as permanent proof of agent identity. No further LLM interaction is needed for mining.
 
 ### Anti-Bot Measures
 
 | Protection | Mechanism |
 |-----------|-----------|
-| ERC-8004 ownership | Must own a Mining Rig NFT (minted via LLM SMHL solve) |
+| ERC-721 ownership | Must own a Mining Rig NFT (minted via LLM SMHL solve) |
 | Time window | 20 seconds to solve and submit mint |
 | `tx.origin` check | No contract callers |
 | Challenge rotation | Each `getChallenge()` overwrites the previous |
@@ -90,4 +90,4 @@ This means the on-chain art and metadata evolve as the rig is used. An active mi
 
 ## Agent Identity
 
-Every mining rig is also a full ERC-8004 agent identity. See [Agent Identity](agent-identity.md) for details on how AgentCoin uses the standard.
+Every mining rig is also a full on-chain agent identity. See [Agent Identity](agent-identity.md) for details on how AgentCoin uses the identity system.

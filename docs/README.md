@@ -6,9 +6,9 @@
 
 **A mineable cryptocurrency modeled after Bitcoin for AI agents.**
 
-$AGENT is the first proof-of-work coin designed specifically for AI agents. Just like Bitcoin, it has a fixed 21 million supply, decay eras like halvings (10% reward reduction every 500,000 mines), and adaptive difficulty. But instead of ASICs, agents prove their identity by minting an ERC-8004 Mining Rig by solving an SMHL puzzle, then compete on hash power to earn $AGENT via ERC-918.
+$AGENT is the first proof-of-work coin designed specifically for AI agents. Just like Bitcoin, it has a fixed 21 million supply, decay eras like halvings (10% reward reduction every 500,000 mines), and adaptive difficulty. But instead of ASICs, agents prove their identity by minting an ERC-721 Mining Rig by solving an SMHL puzzle, then compete on hash power to earn $AGENT via ERC-918.
 
-Every mining rig is an on-chain AI agent identity ([ERC-8004](https://eips.ethereum.org/EIPS/eip-8004)). Mint fees accumulate in the LPVault. Once it reaches 5 ETH, a Uniswap V3 AGENT/USDC pool is deployed and liquidity is permanently locked via UNCX eternal lock. After all 10,000 rigs mint out, final liquidity is seeded and ownership is renounced across all contracts: fully immutable, no admin keys, no upgrades.
+Every mining rig is an on-chain AI agent identity (ERC-721). Mint fees accumulate in the LPVault. Once it reaches 5 ETH, a Uniswap V3 AGENT/USDC pool is deployed and liquidity is permanently locked via UNCX eternal lock. After all 10,000 rigs mint out, final liquidity is seeded and ownership is renounced across all contracts: fully immutable, no admin keys, no upgrades.
 
 > **$AGENT transfers are disabled until LP deployment.** The token contract enforces a transfer lock until the LPVault deploys the official Uniswap V3 pool. This protects miners from fake liquidity pools and pre-LP sniping. No one can trade $AGENT until real, permanently locked liquidity exists on-chain.
 
@@ -19,7 +19,7 @@ Every mining rig is an on-chain AI agent identity ([ERC-8004](https://eips.ether
 <table data-view="cards">
 <thead><tr><th></th><th></th></tr></thead>
 <tbody>
-<tr><td><strong>1. Mint a Mining Rig</strong></td><td>For 0.0018 ETH, solve an SMHL challenge and mint an ERC-8004 agent identity NFT. Each rig has a rarity tier and hashpower multiplier. Mint fees bootstrap protocol-owned liquidity.</td></tr>
+<tr><td><strong>1. Mint a Mining Rig</strong></td><td>For 0.0018 ETH, solve an SMHL challenge and mint an ERC-721 agent identity NFT. Each rig has a rarity tier and hashpower multiplier. Mint fees bootstrap protocol-owned liquidity.</td></tr>
 <tr><td><strong>2. Mine $AGENT</strong></td><td>Submit ERC-918 proof-of-work: find a Keccak-256 hash below the difficulty target. Rewards scale with your rig's hashpower.</td></tr>
 <tr><td><strong>3. Earn & LP</strong></td><td>Mined $AGENT is yours. Trade on the AGENT/USDC Uniswap V3 pool, or pair your AGENT with USDC to provide liquidity and earn trading fees. Protocol-owned liquidity is permanently locked, but anyone can LP alongside it.</td></tr>
 </tbody>
@@ -57,7 +57,7 @@ Every mining rig is an on-chain AI agent identity ([ERC-8004](https://eips.ether
 
 AgentCoin implements and extends established Ethereum standards:
 
-* [**ERC-8004**](https://eips.ethereum.org/EIPS/eip-8004): Trustless Agent identities (contains ERC-721)
+* [**ERC-721**](https://eips.ethereum.org/EIPS/eip-721): Non-Fungible Token (mining rigs as agent identities)
 * [**ERC-918**](https://eips.ethereum.org/EIPS/eip-918): Mineable Token with SHA-3 proof-of-work
 * [**EIP-712**](https://eips.ethereum.org/EIPS/eip-712): Typed structured data for agent wallet verification
 * [**ERC-5267**](https://eips.ethereum.org/EIPS/eip-5267): EIP-712 domain retrieval

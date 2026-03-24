@@ -576,7 +576,7 @@ contract MiningAgentEdgeTest is Test {
         }
     }
 
-    // ============ ERC-8004: Agent URI ============
+    // ============ Agent URI ============
 
     function testSetAgentURI_OwnerSucceeds() public {
         uint256 tokenId = _mintToken(user);
@@ -613,7 +613,7 @@ contract MiningAgentEdgeTest is Test {
         ma.agentURI(999);
     }
 
-    // ============ ERC-8004: Metadata ============
+    // ============ Metadata ============
 
     function testSetMetadata_OwnerSucceeds() public {
         uint256 tokenId = _mintToken(user);
@@ -648,7 +648,7 @@ contract MiningAgentEdgeTest is Test {
         ma.getMetadata(999, "model");
     }
 
-    // ============ ERC-8004: Agent Wallet ============
+    // ============ Agent Wallet ============
 
     function testSetAgentWallet_ValidSignature() public {
         uint256 tokenId = _mintToken(user);
@@ -723,7 +723,7 @@ contract MiningAgentEdgeTest is Test {
         assertEq(ma.getAgentWallet(tokenId), address(0));
     }
 
-    // ============ ERC-8004: Transfer Clears Wallet ============
+    // ============ Transfer Clears Wallet ============
 
     function testTransfer_ClearsAgentWallet() public {
         uint256 tokenId = _mintToken(user);
@@ -748,7 +748,7 @@ contract MiningAgentEdgeTest is Test {
         assertEq(ma.getAgentWallet(tokenId), address(0));
     }
 
-    // ============ ERC-8004: Registration ============
+    // ============ Registration ============
 
     function testMint_EmitsRegisteredEvent() public {
         vm.prevrandao(uint256(900));
@@ -768,7 +768,7 @@ contract MiningAgentEdgeTest is Test {
         assertEq(ma.getAgentWallet(tokenId), user);
     }
 
-    // ============ ERC-8004: Utility ============
+    // ============ Utility ============
 
     function testIsAuthorizedOrOwner_Owner_True() public {
         uint256 tokenId = _mintToken(user);

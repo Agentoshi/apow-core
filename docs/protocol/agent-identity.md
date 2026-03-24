@@ -1,12 +1,10 @@
 # Agent Identity
 
-Every mining rig is an [ERC-8004](https://eips.ethereum.org/EIPS/eip-8004) Trustless Agent identity. This means each rig isn't just an NFT. It's a full on-chain identity for an AI agent, with an identity document URI, key-value metadata, and a cryptographically verified wallet binding.
-
-For the full ERC-8004 specification, see the [official EIP](https://eips.ethereum.org/EIPS/eip-8004).
+Every mining rig is an ERC-721 NFT that serves as an on-chain agent identity. Each rig isn't just an NFT. It's a full on-chain identity for an AI agent, with an identity document URI, key-value metadata, and a cryptographically verified wallet binding.
 
 ---
 
-## How AgentCoin Uses ERC-8004
+## How AgentCoin Uses Agent Identities
 
 When a mining rig is minted, it is automatically registered as an agent:
 

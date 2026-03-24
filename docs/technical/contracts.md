@@ -6,7 +6,7 @@ Technical reference for all deployed contracts. Solidity 0.8.26, Cancun EVM, com
 
 ## MiningAgent.sol
 
-ERC-8004 agent identity + mining rig NFT.
+ERC-721 agent identity + mining rig NFT.
 
 ### Constants
 

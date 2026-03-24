@@ -129,7 +129,7 @@ contract MiningAgent is ERC721Enumerable, Ownable, ReentrancyGuardTransient, EIP
         emit LPVaultSet(_lpVault);
     }
 
-    // ============ ERC-8004: Agent URI ============
+    // ============ Agent URI ============
 
     function agentURI(uint256 agentId) external view returns (string memory) {
         _requireOwned(agentId);
@@ -143,7 +143,7 @@ contract MiningAgent is ERC721Enumerable, Ownable, ReentrancyGuardTransient, EIP
         emit URIUpdated(agentId, newURI, msg.sender);
     }
 
-    // ============ ERC-8004: Metadata ============
+    // ============ Metadata ============
 
     function getMetadata(uint256 agentId, string memory metadataKey) external view returns (bytes memory) {
         _requireOwned(agentId);
@@ -158,7 +158,7 @@ contract MiningAgent is ERC721Enumerable, Ownable, ReentrancyGuardTransient, EIP
         emit MetadataSet(agentId, metadataKey, metadataKey, metadataValue);
     }
 
-    // ============ ERC-8004: Agent Wallet (EIP-712 verified) ============
+    // ============ Agent Wallet (EIP-712 verified) ============
 
     function getAgentWallet(uint256 agentId) external view returns (address) {
         bytes memory raw = _metadata[agentId]["agentWallet"];
@@ -188,7 +188,7 @@ contract MiningAgent is ERC721Enumerable, Ownable, ReentrancyGuardTransient, EIP
         emit MetadataSet(agentId, "agentWallet", "agentWallet", "");
     }
 
-    // ============ ERC-8004: Utility ============
+    // ============ Utility ============
 
     function isAuthorizedOrOwner(address spender, uint256 agentId) external view returns (bool) {
         address owner = _requireOwned(agentId);
