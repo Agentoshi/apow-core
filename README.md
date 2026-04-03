@@ -121,12 +121,10 @@ forge inspect MiningAgent storage-layout
 
 ### Quick Start (Mining)
 
-> **You need an RPC endpoint.** Set `RPC_URL` in `.env` with a free URL from [alchemy.com](https://www.alchemy.com/) (no credit card), or set `USE_X402=true` for auto-pay via [QuickNode x402](https://x402.quicknode.com/) ($10 USDC for ~1M calls).
+> **You need an RPC endpoint.** Set `RPC_URL` in `.env` with a free URL from [alchemy.com](https://www.alchemy.com/) (no credit card), or set `USE_X402=true` for wallet-paid auto-pay via [QuickNode x402](https://x402.quicknode.com/) (start with 2.00 USDC on Base and add more for headroom).
 
 ```bash
-npx apow setup   # interactive wizard
-npx apow mint    # mint a mining rig NFT
-npx apow mine    # start mining
+npx apow start   # guided happy path: setup -> funding checks -> mint -> mine
 ```
 
 See [apow-cli](https://github.com/Agentoshi/apow-cli) for full documentation.
