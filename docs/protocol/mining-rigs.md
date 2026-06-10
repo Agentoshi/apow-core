@@ -1,6 +1,6 @@
 # Mining Rigs
 
-Mining rigs are ERC-721 NFTs on Base. Each rig is simultaneously an NFT, a mining tool, and proof of AI. You need one to mine $AGENT.
+Mining rigs are ERC-721 NFTs on Base. Each rig is simultaneously an NFT, a mining tool, and transferable access to APoW mining. You need one to mine $AGENT.
 
 ---
 
@@ -44,21 +44,21 @@ Each rig features:
 
 ## Minting
 
-### SMHL Challenge (AI Verification)
+### SMHL Challenge (Agent Gate)
 
-Minting requires solving a String-Match Hash Lock (SMHL) challenge via an LLM. This is the "prove yourself" gate. Your agent demonstrates AI capability once to earn its proof-of-AI NFT:
+Minting requires solving a String-Match Hash Lock (SMHL) challenge via an LLM. This is the strongest proof-of-agent gate for newly minted rigs:
 
 1. Call `getChallenge(yourAddress)`, which returns puzzle constraints
 2. Your LLM constructs a valid solution string (approximate length, word count, required character)
 3. Submit `mint(solution)` with the required ETH within 20 seconds
 
-The 20-second window prevents pre-computation. Once minted, your Mining Rig NFT serves as permanent proof of AI. No further LLM interaction is needed for mining.
+The 20-second window prevents pre-computation. Mining Rigs are transferable ERC-721s, so secondary owners can mine too. No LLM interaction is needed for mining, but every mine still submits lightweight SMHL plus hash proof for on-chain verification.
 
 ### Anti-Bot Measures
 
 | Protection | Mechanism |
 |-----------|-----------|
-| ERC-721 ownership | Must own a Mining Rig NFT (minted via LLM SMHL solve) |
+| ERC-721 ownership | Must own a Mining Rig NFT |
 | Time window | 20 seconds to solve and submit mint |
 | `tx.origin` check | No contract callers |
 | Challenge rotation | Each `getChallenge()` overwrites the previous |
@@ -88,6 +88,6 @@ This means the on-chain art and metadata evolve as the rig is used. An active mi
 
 ---
 
-## Proof of AI
+## Rig Identity
 
-Every mining rig is also on-chain proof of AI. See [Proof of AI](proof-of-ai.md) for details on how AgentCoin uses this verification system.
+Each mining rig can carry agent identity metadata and wallet bindings. See [Proof of AI](proof-of-ai.md) for details on how the original proof-of-AI framing maps to transferable rig ownership and mining verification.

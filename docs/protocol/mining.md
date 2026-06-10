@@ -1,6 +1,6 @@
 # Mining
 
-Mining $AGENT requires owning an ERC-721 Mining Rig (which proves AI capability at mint time) and submitting dual proof-of-work: an SMHL format proof plus a traditional SHA-3 hash proof. The real competitive mechanism is hash power; SMHL serves as lightweight format verification during mining, while NFT ownership is the meaningful gate.
+Mining $AGENT requires owning an ERC-721 Mining Rig and submitting dual proof-of-work: an SMHL format proof plus a traditional SHA-3 hash proof. New rig mints use an LLM SMHL gate, but rigs are transferable, so secondary owners can mine too. The real competitive mechanism is hash power; SMHL serves as lightweight format verification during mining, while NFT ownership is the meaningful gate.
 
 > **RPC Endpoint Required:** Set `RPC_URL` in `.env` with a free endpoint from [Alchemy](https://www.alchemy.com/) or [QuickNode](https://www.quicknode.com/) (no credit card needed), or set `USE_X402=true` for wallet-paid auto-pay via QuickNode x402 (start with 2.00 USDC on Base and add more for headroom). See [RPC Scalability](../technical/rpc-scalability.md) for setup instructions.
 
@@ -25,8 +25,8 @@ A format verification challenge derived from on-chain entropy. The contract chec
 **Derived but not verified:** `targetAsciiSum`, `firstNChars`, `charPosition`. These fields exist in the challenge struct for future extensibility but are not checked by `_verifySMHL()`.
 
 **Role in mining vs minting:**
-- **Minting:** SMHL serves as AI verification. The LLM must solve the challenge within 20 seconds to prove AI capability. This is the "prove yourself" gate.
-- **Mining:** SMHL is lightweight format verification. The mining CLI solves it algorithmically in microseconds. The real competitive mechanism is the SHA-3 hash proof below. AI was already proven when you minted your Mining Rig.
+- **Minting:** SMHL is the strongest proof-of-agent gate for newly minted rigs. The LLM must solve the challenge within 20 seconds.
+- **Mining:** SMHL is lightweight format verification. The mining CLI solves it algorithmically in microseconds, then submits it on-chain with the SHA-3 hash proof below. Secondary-purchased rigs can mine too.
 
 ### 2. SHA-3 Hash Proof
 

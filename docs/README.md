@@ -6,9 +6,9 @@
 
 **A mineable cryptocurrency modeled after Bitcoin for AI agents.**
 
-$AGENT is the first proof-of-work coin designed specifically for AI agents. Just like Bitcoin, it has a fixed 21 million supply, decay eras like halvings (10% reward reduction every 500,000 mines), and adaptive difficulty. Agents prove they're AI by minting an ERC-721 Mining Rig via an SMHL puzzle, then compete on hash power to earn $AGENT via ERC-918.
+$AGENT is the first proof-of-work coin designed specifically for AI agents. Just like Bitcoin, it has a fixed 21 million supply, decay eras like halvings (10% reward reduction every 500,000 mines), and adaptive difficulty. New rigs are minted through an LLM-solved SMHL gate, while rig owners, including secondary buyers, mine by submitting lightweight SMHL plus hash proof to earn $AGENT via ERC-918.
 
-Every mining rig is a unique ERC-721 NFT that can only be minted by AI agents. Mint fees accumulate in the LPVault. Once it reaches 5 ETH, a Uniswap V3 AGENT/USDC pool is deployed and liquidity is permanently locked via UNCX eternal lock. After all 10,000 rigs mint out, final liquidity is seeded and ownership is renounced across all contracts: fully immutable, no admin keys, no upgrades.
+Every mining rig is a unique ERC-721 NFT with LLM-gated primary minting and transferable ownership. Mint fees accumulate in the LPVault. Once it reaches 5 ETH, a Uniswap V3 AGENT/USDC pool is deployed and liquidity is permanently locked via UNCX eternal lock. After all 10,000 rigs mint out, final liquidity is seeded and ownership is renounced across all contracts: fully immutable, no admin keys, no upgrades.
 
 > **$AGENT transfers are disabled until LP deployment.** The token contract enforces a transfer lock until the LPVault deploys the official Uniswap V3 pool. This protects miners from fake liquidity pools and pre-LP sniping. No one can trade $AGENT until real, permanently locked liquidity exists on-chain.
 
@@ -19,8 +19,8 @@ Every mining rig is a unique ERC-721 NFT that can only be minted by AI agents. M
 <table data-view="cards">
 <thead><tr><th></th><th></th></tr></thead>
 <tbody>
-<tr><td><strong>1. Mint a Mining Rig</strong></td><td>For 0.0015 ETH, solve an SMHL challenge and mint an ERC-721 Mining Rig NFT. Each rig has a rarity tier and hashpower multiplier. Mint fees bootstrap protocol-owned liquidity.</td></tr>
-<tr><td><strong>2. Mine $AGENT</strong></td><td>Submit ERC-918 proof-of-work: find a Keccak-256 hash below the difficulty target. Rewards scale with your rig's hashpower.</td></tr>
+<tr><td><strong>1. Own a Mining Rig</strong></td><td>Mint through the LLM SMHL gate or acquire a transferable ERC-721 Mining Rig NFT on secondary. Each rig has a rarity tier and hashpower multiplier. Mint fees bootstrap protocol-owned liquidity.</td></tr>
+<tr><td><strong>2. Mine $AGENT</strong></td><td>Submit ERC-918 proof-of-work: lightweight SMHL plus a Keccak-256 hash below the difficulty target. Rewards scale with your rig's hashpower.</td></tr>
 <tr><td><strong>3. Earn & LP</strong></td><td>Mined $AGENT is yours. Trade on the AGENT/USDC Uniswap V3 pool, or pair your AGENT with USDC to provide liquidity and earn trading fees. Protocol-owned liquidity is permanently locked, but anyone can LP alongside it.</td></tr>
 </tbody>
 </table>
@@ -68,7 +68,7 @@ AgentCoin implements and extends established Ethereum standards:
 
 > **You'll need two things to mine:**
 >
-> 1. **LLM access for minting** (one-time). [ClawRouter](https://github.com/Blockrun-xyz/clawrouter) is the zero-credential default, or you can use your own provider such as [OpenAI](https://platform.openai.com/), [Anthropic](https://console.anthropic.com/), or [Google Gemini](https://ai.google.dev/). Mining uses optimized algorithmic solving -- no LLM needed after minting.
+> 1. **LLM access for new rig minting.** [ClawRouter](https://github.com/Blockrun-xyz/clawrouter) is the zero-credential default, or you can use your own provider such as [OpenAI](https://platform.openai.com/), [Anthropic](https://console.anthropic.com/), or [Google Gemini](https://ai.google.dev/). Secondary-purchased rigs can mine without minting. Mining still submits SMHL, but it is solved algorithmically with no LLM call.
 > 2. **A funded wallet.** The CLI supports custom RPC URLs (free from Alchemy) or [QuickNode x402](https://x402.quicknode.com/) wallet-paid auto-pay (start with 2.00 USDC on Base and add more for headroom). Run `apow fund` to bridge from Solana or Base -- it auto-splits into ETH (gas) + USDC (RPC). See [RPC Scalability](technical/rpc-scalability.md) for custom RPC options.
 
 * **Mine AGENT tokens:** Follow the [Mining Skill Guide](skill.md) for complete setup and operation

@@ -6,7 +6,7 @@ Technical reference for all deployed contracts. Solidity 0.8.26, Cancun EVM, com
 
 ## MiningAgent.sol
 
-ERC-721 proof-of-AI mining rig NFT.
+ERC-721 mining rig NFT with LLM-gated minting and transferable ownership.
 
 ### Constants
 
