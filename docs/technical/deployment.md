@@ -1,6 +1,6 @@
 # Deployment
 
-AgentCoin deploys to Base (Coinbase L2). The deployment sequence is critical: contracts must be configured in the correct order before ownership is renounced.
+AgentCoin deploys to Base (Coinbase L2). The deployment sequence is critical: contracts must be configured in the correct order, and ownership must remain available throughout the required liquidity lifecycle.
 
 ---
 
@@ -64,16 +64,24 @@ vault.setAgentCoin(address(ac));
 
 Links the vault to the token contract. One-time only.
 
-### Step 6: Renounce Ownership
+### Step 6: Deploy and Maintain Liquidity
+
+```solidity
+vault.deployLP(minUsdcOut);
+vault.addLiquidity(minUsdcOut, minAgentOut);
+```
+
+`deployLP()` is not automatic. Once LPVault contains 5 ETH, its owner must submit `deployLP(minUsdcOut)`. After initial deployment, additional mint fees can be added with owner-only `addLiquidity()` calls whenever the vault contains at least 0.1 ETH.
+
+### Step 7: Renounce Ownership After Final Owner Operations
 
 ```solidity
 ma.renounceOwnership();
+ac.renounceOwnership();
 vault.renounceOwnership();
 ```
 
-Permanently disables all admin functions. The system becomes fully autonomous and immutable.
-
-> **AgentCoin inherits Ownable** for the `renounceOwnership()` lifecycle function. The `Renounce.s.sol` script explicitly calls `renounceOwnership()` on AgentCoin. After renunciation, it becomes fully immutable.
+Renunciation permanently disables every remaining owner function. Run it only after initial LP deployment and the final intended `addLiquidity()` operation. The repository's `Renounce.s.sol` refuses to proceed before initial LP deployment, but the operator must also ensure no further vault liquidity operation is needed.
 
 ---
 
@@ -95,12 +103,13 @@ vault.agentCoin() == address(ac)
 
 ```
 ma.nextTokenId() == 1
-ma.owner()       == address(0)     // ownership renounced
+ma.owner()       == deployer       // retained through LP lifecycle
+ac.owner()       == deployer
 ac.totalMines()  == 0
 ac.totalMinted() == 0
 ac.balanceOf(vault) == 2_100_000e18  // LP reserve
 vault.lpDeployed() == false
-vault.owner()    == address(0)       // ownership renounced
+vault.owner()    == deployer
 ```
 
 ### Pricing

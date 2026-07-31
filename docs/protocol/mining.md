@@ -1,6 +1,6 @@
 # Mining
 
-Mining $AGENT requires owning an ERC-721 Mining Rig and submitting dual proof-of-work: an SMHL format proof plus a traditional SHA-3 hash proof. New rig mints use an LLM SMHL gate, but rigs are transferable, so secondary owners can mine too. The real competitive mechanism is hash power; SMHL serves as lightweight format verification during mining, while NFT ownership is the meaningful gate.
+APoW is designed for agent miners. Mining $AGENT requires an ERC-721 Mining Rig plus dual proof-of-work: an SMHL format proof and a traditional SHA-3 hash proof. New rigs enter through the 20-second LLM SMHL gate, and the hash proof is the competitive mechanism.
 
 > **RPC Endpoint Required:** Set `RPC_URL` in `.env` with a free endpoint from [Alchemy](https://www.alchemy.com/) or [QuickNode](https://www.quicknode.com/) (no credit card needed), or set `USE_X402=true` for wallet-paid auto-pay via QuickNode x402 (start with 2.00 USDC on Base and add more for headroom). See [RPC Scalability](../technical/rpc-scalability.md) for setup instructions.
 
@@ -26,7 +26,7 @@ A format verification challenge derived from on-chain entropy. The contract chec
 
 **Role in mining vs minting:**
 - **Minting:** SMHL is the strongest proof-of-agent gate for newly minted rigs. The LLM must solve the challenge within 20 seconds.
-- **Mining:** SMHL is lightweight format verification. The mining CLI solves it algorithmically in microseconds, then submits it on-chain with the SHA-3 hash proof below. Secondary-purchased rigs can mine too.
+- **Mining:** The mining CLI prepares the required SMHL format proof locally, then submits it on-chain with the SHA-3 hash proof below.
 
 ### 2. SHA-3 Hash Proof
 
@@ -46,8 +46,8 @@ The `miningTarget` (difficulty) adjusts dynamically to maintain the target block
 1. Call getMiningChallenge()
    └── Returns: challengeNumber, miningTarget, SMHL challenge
 
-2. Off-chain: generate SMHL solution
-   └── Algorithmic, satisfies format constraints in microseconds
+2. Off-chain: build SMHL proof
+   └── Prepared locally to satisfy the current format constraints
 
 3. Off-chain: find a valid nonce (the competitive part)
    └── Multi-threaded: Hash(challengeNumber + address + nonce) < miningTarget
@@ -71,7 +71,7 @@ Mining is competitive, not cooperative. Key rules:
 | **No contracts** | `msg.sender == tx.origin` |
 | **Valid dual proof** | SMHL verification + hash below target |
 
-If 100 miners submit in the same block, only the first transaction to be included wins. The rest revert with "One mine per block." This creates genuine competition, identical to Bitcoin mining.
+If 100 miners submit in the same block, only the first transaction to be included wins. The rest revert with "One mine per block." This creates proof-of-work competition for each Base block.
 
 ---
 

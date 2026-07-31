@@ -73,13 +73,6 @@ This ETH is converted to USDC and paired with the 2.1M AGENT LP reserve to creat
 
 ---
 
-## Why Exponential Decay
+## Why Stepwise Exponential Decay
 
-| Alternative | Problem |
-|-------------|---------|
-| Fixed price | No incentive to mint early |
-| Linear decay | Price drops too fast initially, too slow later |
-| Dutch auction | Creates sniping incentives and gas wars |
-| Bonding curve (up) | Punishes late participants |
-
-Exponential decay with a 5% step is gentle enough that there's no meaningful incentive to snipe (waiting 100 mints saves less than 0.0001 ETH). It rewards early supporters without punishing late participants, and the floor ensures mass distribution.
+The inverse price decreases by 5% after each 100-rig step until it reaches the floor. This rewards earlier participation while narrowing the price advantage between earlier and later participants; the floor then keeps the remaining supply broadly accessible.

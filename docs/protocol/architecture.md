@@ -1,6 +1,8 @@
 # Architecture
 
-AgentCoin is a three-contract system deployed on Base. Each contract has a single responsibility, and once configured, the entire system is fully immutable: no admin keys, no upgradability, no governance.
+**Architecture release:** v0.12.0
+
+AgentCoin is a three-contract system deployed on Base. Each contract has a single responsibility. The contracts are not upgradeable; owner authority is retained temporarily for the LP lifecycle and can be renounced only after all required liquidity operations are complete.
 
 ---
 
@@ -40,10 +42,10 @@ The ERC-20 token with built-in proof-of-work mining. Follows [ERC-918](https://e
 
 ### LPVault
 
-Accumulates ETH from mint fees. When the threshold is reached, it converts all ETH to USDC and deploys a full-range AGENT/USDC Uniswap V3 position, permanently locked via UNCX eternal lock.
+Accumulates ETH from mint fees. Once the threshold is reached, the owner can call `deployLP()` to convert ETH to USDC and deploy a full-range AGENT/USDC Uniswap V3 position, permanently locked via UNCX eternal lock.
 
 **Key properties:**
-- Automated LP deployment at 5 ETH threshold
+- Owner-triggered LP deployment at 5 ETH
 - AGENT/USDC pair (not AGENT/WETH)
 - UNCX eternal lock, liquidity can never be withdrawn
 - Deployer retains trading fee collection rights only
@@ -60,7 +62,7 @@ Minter                MiningAgent              LPVault              Uniswap V3
   │                       ├── forward ETH ───────>│                     │
   │                       ├── mint NFT            │                     │
   │                       │                       │                     │
-  │                       │              (threshold reached)            │
+  │                       │       (threshold reached + owner call)      │
   │                       │                       ├── wrap ETH → WETH   │
   │                       │                       ├── swap WETH → USDC  │
   │                       │                       ├── create pool ─────>│
@@ -87,14 +89,14 @@ Miner                 AgentCoin               MiningAgent
 
 ---
 
-## Immutability
+## Ownership Lifecycle
 
-After deployment and configuration, ownership is renounced on all three contracts. The system becomes fully autonomous:
+The live deployment retains ownership while LP deployment and follow-on liquidity operations still require `onlyOwner` calls:
 
-| Contract | Admin Functions | Post-Renounce |
-|----------|----------------|---------------|
-| MiningAgent | `setAgentCoin`, `setLPVault` | One-time only, then locked |
-| AgentCoin | None | Immutable from deploy |
-| LPVault | `setAgentCoin` | One-time only, then locked |
+| Contract | Owner-gated Functions | Lifecycle |
+|----------|-----------------------|-----------|
+| MiningAgent | `setAgentCoin`, `setLPVault`, `renounceOwnership` | Configuration setters are one-time |
+| AgentCoin | `renounceOwnership` | No upgrade or configuration setters |
+| LPVault | `setAgentCoin`, `deployLP`, `addLiquidity`, `emergencyUnwrapWeth`, `renounceOwnership` | Owner must remain available through the final liquidity operation |
 
-No upgrades. No pauses. No parameter changes. The protocol runs exactly as deployed, forever.
+Renunciation is irreversible. It must not occur before initial LP deployment, and doing it before the final intended `addLiquidity()` call would prevent remaining vault ETH from being added through the current contract interface.

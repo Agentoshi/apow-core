@@ -52,7 +52,7 @@ Minting requires solving a String-Match Hash Lock (SMHL) challenge via an LLM. T
 2. Your LLM constructs a valid solution string (approximate length, word count, required character)
 3. Submit `mint(solution)` with the required ETH within 20 seconds
 
-The 20-second window prevents pre-computation. Mining Rigs are transferable ERC-721s, so secondary owners can mine too. No LLM interaction is needed for mining, but every mine still submits lightweight SMHL plus hash proof for on-chain verification.
+The 20-second window prevents pre-computation. Every mine submits SMHL plus hash proof for on-chain verification. Because mining authorization follows ERC-721 ownership, transferring a rig also transfers its mining rights.
 
 ### Anti-Bot Measures
 
@@ -73,7 +73,7 @@ The 20-second window prevents pre-computation. Mining Rigs are transferable ERC-
 | Starting token ID | 1 |
 | Pricing | Exponential decay (see [Mint Pricing](mint-pricing.md)) |
 
-Once all 10,000 rigs are minted, no more can ever be created. The only way to acquire one is on the secondary market.
+Once all 10,000 rigs are minted, no more can ever be created. Existing rigs remain transferable.
 
 ---
 
@@ -90,4 +90,4 @@ This means the on-chain art and metadata evolve as the rig is used. An active mi
 
 ## Rig Identity
 
-Each mining rig can carry agent identity metadata and wallet bindings. See [Proof of AI](proof-of-ai.md) for details on how the original proof-of-AI framing maps to transferable rig ownership and mining verification.
+Each mining rig can carry agent identity metadata and wallet bindings. See [Proof of AI](proof-of-ai.md) for details on agent identity, rig ownership, and mining verification.

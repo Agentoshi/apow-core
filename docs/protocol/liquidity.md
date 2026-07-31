@@ -1,6 +1,6 @@
 # Liquidity
 
-All mint revenue is used to create permanently locked liquidity for $AGENT. No one, not even the deployer, can ever withdraw it. This guarantees a permanent trading floor from day one.
+Mint revenue accumulates in LPVault for permanently locked $AGENT liquidity. The vault exposes no general ETH withdrawal function, but the owner must submit the initial deployment and follow-on liquidity transactions.
 
 ---
 
@@ -12,7 +12,7 @@ Every mining rig mint forwards its full `msg.value` to the LPVault contract. The
 
 ### Deployment
 
-When the vault balance reaches **5 ETH** (4.97 ETH + 0.03 ETH UNCX fee), the owner can trigger LP deployment:
+When the vault balance reaches **5 ETH** (4.97 ETH + 0.03 ETH UNCX fee), the owner can call `deployLP(minUsdcOut)`:
 
 1. **Wrap:** All ETH is wrapped to WETH
 2. **Swap:** All WETH is swapped to USDC via Uniswap V3
@@ -28,7 +28,7 @@ When the vault balance reaches **5 ETH** (4.97 ETH + 0.03 ETH UNCX fee), the own
 
 ### Adding Liquidity (Repeatable)
 
-After initial LP deployment, the vault continues accumulating ETH from ongoing mint fees. When the balance reaches ≥0.1 ETH (`ADD_LIQUIDITY_THRESHOLD`), anyone can call `addLiquidity()` to deepen the existing UNCX-locked position:
+After initial LP deployment, the vault continues accumulating ETH from ongoing mint fees. When the balance reaches ≥0.1 ETH (`ADD_LIQUIDITY_THRESHOLD`), the owner can call `addLiquidity(minUsdcOut, minAgentOut)` to deepen the existing UNCX-locked position:
 
 1. Wraps all vault ETH to WETH (no UNCX fee for `increaseLiquidity`)
 2. Swaps all WETH → USDC via Uniswap V3
@@ -44,7 +44,7 @@ This function is callable multiple times. Each call deepens the same eternal liq
 | Asset | Amount | Source |
 |-------|--------|--------|
 | AGENT | 2,100,000 | LP reserve (minted at deployment) |
-| USDC | ~$5,300+ | Converted from mint fee ETH |
+| USDC | Swap proceeds from 4.97 ETH | Converted from mint fee ETH, net of execution |
 
 The LP reserve is 10% of total supply, a significant amount that ensures meaningful liquidity depth from launch.
 
@@ -90,12 +90,13 @@ The LP deployment includes safety measures:
 
 ---
 
-## Trustlessness
+## Execution and Lock Model
 
-The entire LP flow is trustless:
+The LP flow combines an owner-triggered execution step with an irreversible on-chain lock:
 
-- **Threshold-gated:** LP deploys only after vault reaches 5 ETH threshold
+- **Threshold-gated:** `deployLP()` reverts until the vault contains 5 ETH
 - **Owner-initiated:** `deployLP()` is restricted to the contract owner (`onlyOwner`)
+- **Owner-selected slippage bounds:** The owner supplies minimum output parameters for swaps
 - **Atomic execution:** wrap, swap, pool, liquidity, lock in one transaction
 - **No intermediate custody:** ETH goes directly from vault to Uniswap
 - **Verifiable on-chain:** UNCX lock is publicly auditable

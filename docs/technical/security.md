@@ -4,17 +4,17 @@ AgentCoin is designed with defense-in-depth. Every contract follows the principl
 
 ---
 
-## Immutability
+## Ownership and Immutability
 
-After deployment and configuration, all admin functions are permanently disabled:
+The contracts are non-upgradeable, but the live LP lifecycle still requires owner authority:
 
-| Contract | Setter Functions | Post-Config |
-|----------|-----------------|-------------|
-| MiningAgent | `setAgentCoin`, `setLPVault` | One-time only, then reverts |
-| AgentCoin | None | Immutable from deploy |
-| LPVault | `setAgentCoin` | One-time only, then reverts |
+| Contract | Owner Authority | Required Lifecycle |
+|----------|-----------------|--------------------|
+| MiningAgent | One-time `setAgentCoin`, `setLPVault`; renunciation | Setters lock after configuration |
+| AgentCoin | Renunciation only | No configuration or upgrade functions |
+| LPVault | One-time `setAgentCoin`; `deployLP`, `addLiquidity`, recovery, renunciation | Owner remains required through final liquidity operation |
 
-Once the deployer calls `renounceOwnership()` on MiningAgent and LPVault, no further configuration changes are possible. AgentCoin has no owner functions at all.
+Renunciation is irreversible. Renouncing LPVault before `deployLP()` would permanently prevent launch; renouncing before the final intended `addLiquidity()` would leave later mint-fee ETH without a callable liquidity path.
 
 ---
 
@@ -46,7 +46,7 @@ Once the deployer calls `renounceOwnership()` on MiningAgent and LPVault, no fur
 
 | Protection | Mechanism |
 |-----------|-----------|
-| SMHL AI verification gate | Minting requires LLM to solve SMHL within 20s, proving AI capability |
+| LLM SMHL gate | Primary minting requires an SMHL solution within 20 seconds |
 | 20-second window | Mint challenge expires quickly, preventing pre-computation |
 | Challenge overwrite | New `getChallenge()` invalidates previous |
 | Fee forwarding | Full `msg.value` sent to LPVault, nothing retained |
@@ -70,7 +70,7 @@ Once the deployer calls `renounceOwnership()` on MiningAgent and LPVault, no fur
 
 Both MiningAgent and AgentCoin use `ReentrancyGuardTransient` from OpenZeppelin v5, which leverages EIP-1153 transient storage. This is more gas-efficient than traditional reentrancy guards and provides the same protection.
 
-The LPVault's `deployLP()` is naturally protected by the `lpDeployed` flag, so it can only execute once.
+LPVault applies `nonReentrant` to `deployLP()` and `addLiquidity()`. Initial deployment is additionally one-time through the `lpDeployed` state check.
 
 ---
 
@@ -83,7 +83,7 @@ Both `mint()` and `mine()` require `msg.sender == tx.origin`. This prevents cont
 - Account abstraction (ERC-4337) wallets cannot directly mine or mint
 - Users must interact from EOAs
 
-This is an intentional design choice. The SMHL challenge system assumes a direct human/agent interaction pattern.
+This is an intentional design choice. The SMHL challenge system assumes direct EOA interaction.
 
 ### Difficulty Floor
 
@@ -95,9 +95,9 @@ The reward calculation loops through all past eras: `for (i = 0; i < era; i++) {
 
 ---
 
-## Audit Status
+## Repository Test Coverage
 
-The contracts have been thoroughly tested with 231 tests covering:
+The contract repository includes:
 
 - Unit tests for all public functions
 - Edge cases for boundary conditions
@@ -107,4 +107,4 @@ The contracts have been thoroughly tested with 231 tests covering:
 - Gas profiling at various era levels
 - Fork tests against Base mainnet infrastructure
 
-All tests pass. The codebase is open source under MIT license.
+The codebase is open source under the MIT license. This repository test suite is not a substitute for an independent security audit.

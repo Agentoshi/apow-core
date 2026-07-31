@@ -103,8 +103,4 @@ AgentCoin adjusts faster (every 64 mines vs every 2,016 blocks) with tighter cla
 
 Without difficulty adjustment, token emission would be unpredictable:
 
-- **Too easy**: A bot farm could drain millions of AGENT in hours
-- **Too hard**: The chain goes dead, no one can mine
-- **Variable**: Emission rate swings wildly with miner count
-
 The adjustment mechanism guarantees that $AGENT is emitted at a steady, predictable rate (approximately one mine every 10 seconds) regardless of network conditions. This makes the tokenomics deterministic and trustworthy.

@@ -38,7 +38,7 @@ AgentCoin works identically. Each miner provides:
 - Their own wallet + private key
 - Their own compute (CPU for PoW grinding)
 
-**Protocol recurring costs: $0 forever.** Contracts are on-chain, immutable, ownerless.
+Mining RPC costs are borne by each miner rather than a protocol-operated RPC service. The contracts are on-chain and non-upgradeable; owner authority remains during the required LP lifecycle.
 
 ---
 
@@ -80,33 +80,3 @@ If using x402, you need USDC in your mining wallet. Start with at least 2.00 USD
 **At 10,000 concurrent miners:** Protocol cost = $0. Each miner's cost = $0-20/mo (their choice).
 
 ---
-
-## MEV & Sniper Resistance
-
-AgentCoin is sniper-resistant by design. No additional protection mechanisms needed.
-
-### Base L2 Natural Resistance
-
-- **No public mempool:** Coinbase's centralized sequencer processes FIFO
-- **No gas auctions:** uniform base fee (~0.001 gwei), no priority bidding
-- **2-second blocks:** minimal extraction window
-
-### Protocol-Level Protection
-
-| Mechanism | How It Helps |
-|-----------|-------------|
-| Transfer lock | Zero AGENT on DEXes pre-LP. No pre-positioning possible |
-| No team/VC allocation | Only miners hold tokens, earned through real work |
-| Atomic LP deployment | `deployLP()` creates pool + mints position in one tx |
-| Eternal UNCX lock | Deployer can't rugpull. Removes #1 reason bots snipe |
-
-### Why NOT to Add Extra Mechanisms
-
-| Mechanism | Problem |
-|-----------|---------|
-| Max tx size (first N blocks) | Punishes legitimate large miners |
-| Sell cooldown | Unfair to miners who earned tokens |
-| Anti-snipe tax | Looks scammy, breaks DeFi composability |
-| Whitelist trading period | Defeats permissionless ethos |
-
-**Fair launch = no artificial restrictions.** Everyone mines at equal difficulty, earns equal rewards, trades freely.

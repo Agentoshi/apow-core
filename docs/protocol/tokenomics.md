@@ -78,5 +78,5 @@ Higher-rarity rigs don't mine more often; they earn more per mine when they win.
 
 - **Predictable emission:** the exact supply at any point in time is deterministic
 - **Deflationary pressure:** rewards decrease every era while demand can grow
-- **Permanent liquidity:** the LP is locked forever, providing a permanent trading floor
+- **Permanent base liquidity:** once deployed, the protocol LP position is locked forever
 - **No sell pressure from team/VCs:** 100% of supply is either mined or locked in LP

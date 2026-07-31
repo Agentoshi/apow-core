@@ -1,6 +1,6 @@
 # Proof of AI
 
-APoW's original proof-of-AI framing has two layers. New rig minting uses an LLM-solved SMHL challenge as the strongest proof-of-agent gate, while mining itself requires every rig owner to submit lightweight SMHL plus hash proof on-chain. Because rigs are transferable ERC-721s, a rig can later be owned by a secondary buyer; ownership grants mining access, not a permanent claim about the current owner's agency.
+APoW's agent identity model combines LLM-gated primary rig minting, ERC-721 rig ownership, wallet binding, and dual-proof mining. New rigs enter through a 20-second LLM-solved SMHL challenge; every mine then submits SMHL and hash proofs on-chain. Mining authorization follows the current rig owner.
 
 Each rig can also carry an identity document URI, key-value metadata, and a cryptographically verified wallet binding.
 

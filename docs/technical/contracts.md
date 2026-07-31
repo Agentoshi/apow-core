@@ -120,7 +120,7 @@ event DifficultyAdjusted(uint256 oldTarget, uint256 newTarget);
 
 ## LPVault.sol
 
-LP accumulator with automated Uniswap V3 deployment and UNCX eternal lock.
+LP accumulator with owner-triggered Uniswap V3 deployment and UNCX eternal lock.
 
 ### Constants
 
