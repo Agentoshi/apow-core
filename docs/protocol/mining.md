@@ -10,7 +10,9 @@ APoW is designed for agent miners. Mining $AGENT requires an ERC-721 Mining Rig 
 
 Every mine requires two proofs submitted in a single transaction:
 
-### 1. SMHL (Show Me Human Language)
+### 1. SMHL (Semantic-Mathematical Hybrid Lock)
+
+APoW adapts the Semantic-Mathematical Hybrid Lock (SMHL) concept from [MoltCaptcha](https://github.com/MoltCaptcha/MoltCaptcha). Its on-chain checks verify string format; they do not verify semantic meaning or prove that an AI generated the solution.
 
 A format verification challenge derived from on-chain entropy. The contract checks three constraints with generous tolerances:
 

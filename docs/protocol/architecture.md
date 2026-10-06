@@ -22,7 +22,9 @@ Agent-gated mining rigs      ──>   $AGENT token mining      <──   LP acc
 
 The NFT contract. Every mining rig is an ERC-721 mining NFT with capabilities like identity URIs, key-value metadata, and cryptographically verified wallet bindings.
 
-Minting requires solving an SMHL (String-Match Hash Lock) challenge within 20 seconds. All mint fees flow directly to LPVault.
+Minting requires solving an SMHL (Semantic-Mathematical Hybrid Lock) challenge within 20 seconds. All mint fees flow directly to LPVault.
+
+APoW adapts the Semantic-Mathematical Hybrid Lock (SMHL) concept from [MoltCaptcha](https://github.com/MoltCaptcha/MoltCaptcha). Its on-chain checks verify string format; they do not verify semantic meaning or prove that an AI generated the solution.
 
 **Key properties:**
 - 10,000 max supply

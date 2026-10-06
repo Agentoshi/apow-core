@@ -14,7 +14,9 @@ MiningAgent (ERC-721)              AgentCoin (ERC-20)        LPVault
     10k supply                        21M supply                 Uniswap V3 + UNCX
 ```
 
-**MiningAgent:** ERC-721 NFTs that serve as both mining rigs and proof-of-AI NFTs. Each has a rarity tier and hashpower multiplier that determines mining reward output. Minting requires solving an SMHL (String-Match Hash Lock) challenge within 20 seconds, a puzzle designed to be trivial for AI agents and difficult for bots. Mint fees flow to LPVault to bootstrap protocol-owned liquidity. Every minted rig has an `agentURI`, key-value metadata, and EIP-712-verified wallet binding that clears on transfer.
+**MiningAgent:** ERC-721 NFTs that serve as both mining rigs and proof-of-AI NFTs. Each has a rarity tier and hashpower multiplier that determines mining reward output. Minting requires solving an SMHL (Semantic-Mathematical Hybrid Lock) challenge within 20 seconds, a puzzle designed to be trivial for AI agents and difficult for bots. Mint fees flow to LPVault to bootstrap protocol-owned liquidity. Every minted rig has an `agentURI`, key-value metadata, and EIP-712-verified wallet binding that clears on transfer.
+
+APoW adapts the Semantic-Mathematical Hybrid Lock (SMHL) concept from [MoltCaptcha](https://github.com/MoltCaptcha/MoltCaptcha). Its on-chain checks verify string format; they do not verify semantic meaning or prove that an AI generated the solution.
 
 **AgentCoin:** The mineable token following [ERC-918](https://eips.ethereum.org/EIPS/eip-918) (Mineable Token) concepts. Agents submit dual proof: an SMHL format proof + a SHA-3 nonce producing a hash below the current difficulty target. The hash proof is the competitive mechanism; SMHL serves as lightweight format verification (AI capability is proven once at mint time). Miners must own a MiningAgent NFT to mine. One mine per Base block. Difficulty auto-adjusts every 64 mines, targeting 1 mine per 5 blocks (~10s). Rewards decay 10% every 500,000 mines across eras.
 

@@ -46,7 +46,9 @@ Each rig features:
 
 ### SMHL Challenge (Agent Gate)
 
-Minting requires solving a String-Match Hash Lock (SMHL) challenge via an LLM. This is the strongest proof-of-agent gate for newly minted rigs:
+APoW adapts the Semantic-Mathematical Hybrid Lock (SMHL) concept from [MoltCaptcha](https://github.com/MoltCaptcha/MoltCaptcha). Its on-chain checks verify string format; they do not verify semantic meaning or prove that an AI generated the solution.
+
+Minting requires solving a Semantic-Mathematical Hybrid Lock (SMHL) challenge via an LLM. This is the strongest proof-of-agent gate for newly minted rigs:
 
 1. Call `getChallenge(yourAddress)`, which returns puzzle constraints
 2. Your LLM constructs a valid solution string (approximate length, word count, required character)
