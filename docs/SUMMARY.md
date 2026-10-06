@@ -15,6 +15,9 @@
 
 ## Technical Reference
 
+* [Personal Assistants](technical/assistants.md)
+* [Managed Cloud Mining](technical/managed-mining.md)
+
 * [Smart Contracts](technical/contracts.md)
 * [Security](technical/security.md)
 * [Deployment](technical/deployment.md)

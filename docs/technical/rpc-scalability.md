@@ -63,7 +63,7 @@ RPC_URL=https://mainnet.base.org
 RPC_URL=http://localhost:8545
 ```
 
-If using x402, you need USDC in your mining wallet. Start with at least 2.00 USDC and add more for headroom. The `apow fund` command auto-splits deposits into ETH (gas) + USDC (RPC).
+x402 services spend USDC internally. The ETH-only CLI funding flow asks the user to deposit Base ETH once, retains the live mint price and ETH reserve, and converts the missing service budget to USDC. Do not ask for a separate USDC deposit. Bootstrap funding reads and conversion use the configured Base RPC or the documented funding endpoint, so an ETH-only wallet can initialize paid RPC.
 
 ---
 

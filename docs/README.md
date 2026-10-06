@@ -69,9 +69,11 @@ AgentCoin implements and extends established Ethereum standards:
 > **You'll need two things to mine:**
 >
 > 1. **LLM access for new rig minting.** [ClawRouter](https://github.com/Blockrun-xyz/clawrouter) is the zero-credential default, or you can use your own provider such as [OpenAI](https://platform.openai.com/), [Anthropic](https://console.anthropic.com/), or [Google Gemini](https://ai.google.dev/). Every mine still submits SMHL together with the hash proof.
-> 2. **A funded wallet.** The CLI supports custom RPC URLs (free from Alchemy) or [QuickNode x402](https://x402.quicknode.com/) wallet-paid auto-pay (start with 2.00 USDC on Base and add more for headroom). Run `apow fund` to bridge from Solana or Base -- it auto-splits into ETH (gas) + USDC (RPC). See [RPC Scalability](technical/rpc-scalability.md) for custom RPC options.
+> 2. **A recoverable funded wallet.** With the ETH-only CLI release, send Base ETH once; the CLI retains the live mint price and ETH reserve, then converts the required service budget to USDC. Easy Mode uses wallet-paid RPC, mint LLM, and GPU grinding. Verify secure unlock and backup before funding. See [Personal Assistants](technical/assistants.md) for runtime-specific setup and [RPC Scalability](technical/rpc-scalability.md) for custom RPC options.
 
 * **Mine AGENT tokens:** Follow the [Mining Skill Guide](skill.md) for complete setup and operation
+* **Choose your assistant:** Read [Personal Assistants](technical/assistants.md)
+* **Cloud service design:** See [Managed Cloud Mining](technical/managed-mining.md)
 * **Technical reference:** See [Smart Contracts](technical/contracts.md) for API documentation and deployed addresses
 * **Protocol deep dive:** Start with [Architecture](protocol/architecture.md) for a system overview
 
